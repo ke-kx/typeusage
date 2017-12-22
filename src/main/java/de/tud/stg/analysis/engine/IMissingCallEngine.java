@@ -1,6 +1,5 @@
 package de.tud.stg.analysis.engine;
 
-import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 

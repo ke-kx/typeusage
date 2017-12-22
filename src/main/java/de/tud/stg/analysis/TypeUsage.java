@@ -8,28 +8,37 @@ public abstract class TypeUsage {
 	private String context;
 	private String type;
 	private String location;
+
 	public String getLocation() {
 		return location;
 	}
+
 	public void setLocation(String location) {
 		this.location = location;
 	}
+
 	public Set<String> calls = new HashSet<String>();
+
 	public String getType() {
 		return type;
 	}
+
 	public String getContext() {
 		return context;
 	}
+
 	public TypeUsage setType(String _type) {
-		type=_type;
+		type = _type;
 		return this;
 	}
+
 	public TypeUsage setContext(String _context) {
-		context=_context;
+		context = _context;
 		return this;
 	}
+
+	@Override
 	public String toString() {
-		return context+" "+type+" "+StringUtils.join(calls," ");
+		return context + " " + type + " " + StringUtils.join(calls, " ");
 	}
 }

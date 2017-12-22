@@ -53,8 +53,10 @@ public class DMMCRunner extends MuBenchRunner {
 	}
 
 	private static String[] generateRunArgs(String misuseClasspath, String patternClasspath) {
-		return new String[] { "-soot-classpath", misuseClasspath + ":" + patternClasspath,
-				"-pp", /* prepend is not required */
+		return new String[] { "-soot-classpath", misuseClasspath + ":" + patternClasspath, "-pp", /*
+																									 * prepend is not
+																									 * required
+																									 */
 				"-process-dir", misuseClasspath, "-process-dir", patternClasspath };
 	}
 
@@ -75,28 +77,25 @@ public class DMMCRunner extends MuBenchRunner {
 		collector.setDirToProcess(args.getTargetPath().classPath);
 		run(output, modelFilename, collector,
 				// using values from the paper
-				/* strangeness threshold = */ 0.5,
-				/* maximum number of missing calls = */ 1,
-				usage -> true, true);
+				/* strangeness threshold = */ 0.5, /* maximum number of missing calls = */ 1, usage -> true, true);
 	}
 
 	private static void run(DetectorOutput output, String modelFilename, FileTypeUsageCollector usageCollector,
-							double minStrangeness, int maxNumberOfMissingCalls,
-							Predicate<ObjectTrace> targetUsage, boolean filterMissingMethodsWithSmallSupport) throws Exception {
+			double minStrangeness, int maxNumberOfMissingCalls, Predicate<ObjectTrace> targetUsage,
+			boolean filterMissingMethodsWithSmallSupport) throws Exception {
 		try {
 			usageCollector.run();
 		} finally {
 			usageCollector.close();
 		}
 
-		detect(modelFilename, output, minStrangeness, maxNumberOfMissingCalls, targetUsage, filterMissingMethodsWithSmallSupport);
+		detect(modelFilename, output, minStrangeness, maxNumberOfMissingCalls, targetUsage,
+				filterMissingMethodsWithSmallSupport);
 	}
 
-	private static void detect(String modelFilename, DetectorOutput output,
-							   double minStrangeness, int maxNumberOfMissingCalls,
-							   Predicate<ObjectTrace> targetUsage,
-							   boolean filterMissingMethodsWithSmallSupport)
-			throws Exception {
+	private static void detect(String modelFilename, DetectorOutput output, double minStrangeness,
+			int maxNumberOfMissingCalls, Predicate<ObjectTrace> targetUsage,
+			boolean filterMissingMethodsWithSmallSupport) throws Exception {
 		List<ObjectTrace> dataset = new DatasetReader().readObjects(modelFilename);
 		EcoopEngine engine = new EcoopEngine(dataset);
 		engine.option_filterIsEnabled = filterMissingMethodsWithSmallSupport;
@@ -106,7 +105,7 @@ public class DMMCRunner extends MuBenchRunner {
 		int nanalyzed = 0;
 
 		System.out.println("finding usages with a strangeness of more than " + minStrangeness + "...");
-        List<ObjectTrace> findings = new ArrayList<>();
+		List<ObjectTrace> findings = new ArrayList<>();
 		for (ObjectTrace record : dataset) {
 			System.out.print(nanalyzed + "/" + dataset.size());
 
@@ -124,10 +123,10 @@ public class DMMCRunner extends MuBenchRunner {
 
 		findings.sort((f1, f2) -> Double.compare(f2.strangeness(), f1.strangeness()));
 
-        for (ObjectTrace finding : findings) {
-            addFinding(output, finding);
-        }
-    }
+		for (ObjectTrace finding : findings) {
+			addFinding(output, finding);
+		}
+	}
 
 	private static void addFinding(DetectorOutput output, ObjectTrace target) throws IOException {
 		String file = getSourceFileName(target);
@@ -159,8 +158,7 @@ public class DMMCRunner extends MuBenchRunner {
 	}
 
 	private static List<String> getMissingCalls(ObjectTrace target) {
-		return target.missingcalls.keySet().stream()
-				.map(missingcall -> missingcall.split(":")[1])
+		return target.missingcalls.keySet().stream().map(missingcall -> missingcall.split(":")[1])
 				.collect(Collectors.toCollection(LinkedList::new));
 	}
 
@@ -171,11 +169,11 @@ public class DMMCRunner extends MuBenchRunner {
 	public static String getMethodName(ObjectTrace target) {
 		String methodName = target.getContext().split(":")[1].replace(",", ", ");
 		if (methodName.startsWith("<init>")) {
-            String typeName = convertLocationToFQN(target.getLocation());
+			String typeName = convertLocationToFQN(target.getLocation());
 			typeName = typeName.substring(typeName.lastIndexOf(".") + 1);
 			typeName = typeName.substring(typeName.lastIndexOf("$") + 1);
-            methodName = typeName + methodName.substring("<init>".length());
-        }
+			methodName = typeName + methodName.substring("<init>".length());
+		}
 		return methodName;
 	}
 

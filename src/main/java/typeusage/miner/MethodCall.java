@@ -9,10 +9,11 @@ public class MethodCall {
 
 	public Local v;
 	public Stmt s;
+
 	@Override
 	public String toString() {
 		InvokeExpr invokeExpr = s.getInvokeExpr();
-		return v.toString()+" "+invokeExpr.getMethod().getName();
+		return v.toString() + " " + invokeExpr.getMethod().getName();
 	}
 
 }

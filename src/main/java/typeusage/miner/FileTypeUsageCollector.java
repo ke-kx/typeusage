@@ -6,32 +6,31 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
-
 public class FileTypeUsageCollector extends TypeUsageCollector {
 
-  BufferedWriter output;
-  
-  public FileTypeUsageCollector(String file) throws Exception {
-    super();
-    output = new BufferedWriter(new FileWriter(file));
-  }
+	BufferedWriter output;
 
-  final public List<TypeUsage> data = new ArrayList<TypeUsage>();
+	public FileTypeUsageCollector(String file) throws Exception {
+		super();
+		output = new BufferedWriter(new FileWriter(file));
+	}
 
-  @Override
-  public void receive(TypeUsage t) {
-    try {
-      output.write(t.toString()+"\n");
-    } catch (IOException e) {
-      throw new RuntimeException(e);
-    }
-  }
+	final public List<TypeUsage> data = new ArrayList<TypeUsage>();
 
-  public void close() {
-    try {
-      output.close();
-    } catch (IOException e) {
-      throw new RuntimeException(e);
-    }
-  }
+	@Override
+	public void receive(TypeUsage t) {
+		try {
+			output.write(t.toString() + "\n");
+		} catch (IOException e) {
+			throw new RuntimeException(e);
+		}
+	}
+
+	public void close() {
+		try {
+			output.close();
+		} catch (IOException e) {
+			throw new RuntimeException(e);
+		}
+	}
 }
