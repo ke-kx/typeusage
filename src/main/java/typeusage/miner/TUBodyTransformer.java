@@ -28,30 +28,34 @@ import soot.toolkits.graph.ExceptionalUnitGraph;
  */
 public class TUBodyTransformer extends BodyTransformer {
 
+	/** Reference to parent collector */
 	private IMethodCallCollector collector;
 
+	/** Constructor */
 	public TUBodyTransformer(IMethodCallCollector m) {
 		this.collector = m;
 	}
 
+	/** Used to determine if two local variables point to the same object? */
 	LocalMustAliasAnalysis aliasInfo;
 
+	/** Used to determine if two locals point to the same instance field */ 
 	MayPointToTheSameInstanceField instanceFieldDetector;
 
 	HashMap<SootField, TypeUsage> crossMethodData = new HashMap<SootField, TypeUsage>();
 
+	/**TODO REFACTOR!!! (way too long...) */
 	@Override
 	protected void internalTransform(Body body, String phase, @SuppressWarnings("rawtypes") Map options) {
 
 		String methodContext = collector.translateContextSignature(body.getMethod());
 
 		aliasInfo = new LocalMustAliasAnalysis(new ExceptionalUnitGraph(body));
-		// LocalMustNotAliasAnalysis aliasInfo2 = new LocalMustNotAliasAnalysis(
-		// new ExceptionalUnitGraph(body));
 
 		List<MethodCall> lCalls = new ArrayList<MethodCall>();
 
-		for (Unit u : body.getUnits()) { // for each statement
+		//CONTINUE HERE: seems to go over whole body and collect all method calls (on an object)
+		for (Unit u : body.getUnits()) { // for each statement in method body
 			Stmt s = (Stmt) u;
 			collector.debug(s + "-" + s.getClass());
 			if (s.containsInvokeExpr()) {
@@ -60,9 +64,8 @@ public class TUBodyTransformer extends BodyTransformer {
 				if (invokeExpr instanceof InstanceInvokeExpr
 				// && ! (invokeExpr instanceof SpecialInvokeExpr)
 				) {
-					MethodCall elem = new MethodCall();
-					elem.s = s;
-					elem.v = (Local) ((InstanceInvokeExpr) invokeExpr).getBase();
+					Local local = (Local) ((InstanceInvokeExpr) invokeExpr).getBase();
+					MethodCall elem = new MethodCall(local, s);
 					lCalls.add(elem);
 					collector.debug(elem + " " + invokeExpr.getMethod().getDeclaringClass().getName());
 				}
@@ -75,9 +78,9 @@ public class TUBodyTransformer extends BodyTransformer {
 		List<TypeUsage> lVariables = new ArrayList<TypeUsage>();
 		for (MethodCall call1 : lCalls) {
 			TypeUsage correspondingTypeUsage = findTypeUsage(call1, lVariables);
-			Type type = call1.v.getType();
+			Type type = call1.local.getType();
 			if (type instanceof NullType) {
-				type = call1.s.getInvokeExpr().getMethod().getDeclaringClass().getType();
+				type = call1.stmt.getInvokeExpr().getMethod().getDeclaringClass().getType();
 			}
 			if (type instanceof NullType) {
 				continue;
@@ -94,21 +97,21 @@ public class TUBodyTransformer extends BodyTransformer {
 
 			) {
 				correspondingTypeUsage.underlyingLocals.add(call1);
-				InvokeExpr invokeExpr = call1.s.getInvokeExpr();
+				InvokeExpr invokeExpr = call1.stmt.getInvokeExpr();
 				correspondingTypeUsage.addMethodCall(collector.translateCallSignature(invokeExpr.getMethod()));
 				collector.debug("adding " + call1 + " to " + correspondingTypeUsage);
 			} else {
 
 				TypeUsage aNewTypeUsage = new TypeUsage(methodContext);
 
-				collector.debug("creating " + aNewTypeUsage + " with " + call1.v);
+				collector.debug("creating " + aNewTypeUsage + " with " + call1.local);
 
 				String location = body.getMethod().getDeclaringClass().toString();
-				SourceLnPosTag tag = (SourceLnPosTag) call1.s.getTag("SourceLnPosTag");
+				SourceLnPosTag tag = (SourceLnPosTag) call1.stmt.getTag("SourceLnPosTag");
 				if (tag != null) {
 					location += ":" + tag.startLn();
 				}
-				LineNumberTag tag2 = (LineNumberTag) call1.s.getTag("LineNumberTag");
+				LineNumberTag tag2 = (LineNumberTag) call1.stmt.getTag("LineNumberTag");
 				if (tag2 != null) {
 					location += ":" + tag2.getLineNumber();
 				}
@@ -117,7 +120,7 @@ public class TUBodyTransformer extends BodyTransformer {
 
 				aNewTypeUsage.underlyingLocals.add(call1);
 
-				InvokeExpr invokeExpr = call1.s.getInvokeExpr();
+				InvokeExpr invokeExpr = call1.stmt.getInvokeExpr();
 				aNewTypeUsage.addMethodCall(collector.translateCallSignature(invokeExpr.getMethod()));
 
 				if (type instanceof NullType) {
@@ -130,7 +133,7 @@ public class TUBodyTransformer extends BodyTransformer {
 				setExtends(type, aNewTypeUsage);
 
 				// adding the link to the field
-				SootField sootField = instanceFieldDetector.pointsTo.get(call1.v);
+				SootField sootField = instanceFieldDetector.pointsTo.get(call1.local);
 				if (sootField != null) {
 					crossMethodData.put(sootField, aNewTypeUsage);
 				}
@@ -151,24 +154,24 @@ public class TUBodyTransformer extends BodyTransformer {
 
 	private TypeUsage findTypeUsage(MethodCall call1, List<TypeUsage> lVariables) {
 
-		SootField sootField = instanceFieldDetector.pointsTo.get(call1.v);
+		SootField sootField = instanceFieldDetector.pointsTo.get(call1.local);
 		if (sootField != null) {
 			return crossMethodData.get(sootField);
 		}
 
 		for (TypeUsage aTypeUsage : lVariables) {
 			for (MethodCall e : aTypeUsage.underlyingLocals) {
-				if (call1.v == e.v) {
-					collector.debug(call1.v + " is same as " + e.v);
-					collector.debug(aTypeUsage.type + " <-> " + e.s.getInvokeExpr().getMethod().getDeclaringClass());
+				if (call1.local == e.local) {
+					collector.debug(call1.local + " is same as " + e.local);
+					collector.debug(aTypeUsage.type + " <-> " + e.stmt.getInvokeExpr().getMethod().getDeclaringClass());
 					return aTypeUsage;
 				}
 
-				if (aliasInfo.mustAlias(call1.v, call1.s, e.v, e.s)) {
-					collector.debug(call1.v + " alias to " + e.v);
+				if (aliasInfo.mustAlias(call1.local, call1.stmt, e.local, e.stmt)) {
+					collector.debug(call1.local + " alias to " + e.local);
 					return aTypeUsage;
 				}
-				if (instanceFieldDetector.mayPointsToTheSameInstanceField(call1.v, e.v)) {
+				if (instanceFieldDetector.mayPointsToTheSameInstanceField(call1.local, e.local)) {
 					return aTypeUsage;
 				}
 			}
