@@ -28,10 +28,13 @@ public class TypeUsageCollector implements IMethodCallCollector {
 
 	String filter = "";
 
+	/** Constructor */
 	public TypeUsageCollector() throws Exception {
+		//TODO blogpost claims this option is not actually recommended? http://www.bodden.de/2008/08/21/soot-command-line/
 		Options.v().set_allow_phantom_refs(true);
 	}
 
+	/** Register Transform, set options and start analysis */
 	public TypeUsageCollector run() throws Exception {
 
 		PackManager.v().getPack("jtp").add(new Transform("jtp.myTransform", new TUBodyTransformer(this)));
@@ -45,6 +48,7 @@ public class TypeUsageCollector implements IMethodCallCollector {
 		return this;
 	}
 
+	/** Assemble arguments by setting classpath and processed directory */
 	protected String[] buildSootArgs() {
 		String[] myArgs = { "-soot-classpath", getClassPath(), "-pp", // prepend is not required
 				"-process-dir", getProcessDir(), };
@@ -62,10 +66,6 @@ public class TypeUsageCollector implements IMethodCallCollector {
 	public void receive(TypeUsage t) {
 		System.out.println(t);
 	}
-
-	// mainObj.appOut_A.write(aVariable.repTypeMethodCalls() + "\n");
-	// mainObj.appOut_B.write(aVariable.repContextTypeMethodCalls() + "\n");
-	// mainObj.appOut_C.write(aVariable
 
 	@Override
 	public String translateCallSignature(SootMethod meth) {

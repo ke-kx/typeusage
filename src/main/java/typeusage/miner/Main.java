@@ -5,7 +5,6 @@ public class Main {
 	public final static String DEFAULT_DIR = "./target/test-classes/";
 
 	public static void main(String[] args) throws Exception {
-		// TypeUsageCollector c = new TypeUsageCollector();
 		FileTypeUsageCollector c = new FileTypeUsageCollector("output.dat");
 		String toBeAnalyzed = null;
 		if (args.length > 0) {
@@ -20,5 +19,4 @@ public class Main {
 		c.run();
 		c.close();
 	}
-
 }

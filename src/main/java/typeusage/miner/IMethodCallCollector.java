@@ -16,8 +16,7 @@ public interface IMethodCallCollector {
 	String translateContextSignature(SootMethod meth);
 
 	/**
-	 * if a type-usage"s class' fully-qualified name starts with this prefix, keep
-	 * it
+	 * keep a type-usage if it's class' fully-qualified name starts with this prefix
 	 */
 	String getPackagePrefixToKeep();
 
