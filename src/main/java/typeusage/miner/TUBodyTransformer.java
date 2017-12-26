@@ -48,84 +48,12 @@ public class TUBodyTransformer extends BodyTransformer {
 	@Override
 	protected void internalTransform(Body body, String phase, @SuppressWarnings("rawtypes") Map options) {
 
-		String methodContext = collector.translateContextSignature(body.getMethod());
 
 		aliasInfo = new LocalMustAliasAnalysis(new ExceptionalUnitGraph(body));
-
-		List<MethodCall> localCalls = extractMethodCalls(body);
-
-
-
 		instanceFieldDetector = new MayPointToTheSameInstanceField(body);
 
-		// creating the variables
-		List<TypeUsage> lVariables = new ArrayList<TypeUsage>();
-		for (MethodCall call1 : localCalls) {
-			TypeUsage correspondingTypeUsage = findTypeUsage(call1, lVariables);
-			Type type = call1.local.getType();
-			if (type instanceof NullType) {
-				type = call1.stmt.getInvokeExpr().getMethod().getDeclaringClass().getType();
-			}
-			if (type instanceof NullType) {
-				continue;
-			}
-
-			collector.debug("v: " + type);
-
-			if (correspondingTypeUsage != null
-
-					// if there is a cast this test avoids unsound data (e.g. two method calls of
-					// different classes
-					// in the same type-usage)
-					&& correspondingTypeUsage.type.equals(type.toString())
-
-			) {
-				correspondingTypeUsage.underlyingLocals.add(call1);
-				InvokeExpr invokeExpr = call1.stmt.getInvokeExpr();
-				correspondingTypeUsage.addMethodCall(collector.translateCallSignature(invokeExpr.getMethod()));
-				collector.debug("adding " + call1 + " to " + correspondingTypeUsage);
-			} else {
-
-				TypeUsage aNewTypeUsage = new TypeUsage(methodContext);
-
-				collector.debug("creating " + aNewTypeUsage + " with " + call1.local);
-
-				String location = body.getMethod().getDeclaringClass().toString();
-				SourceLnPosTag tag = (SourceLnPosTag) call1.stmt.getTag("SourceLnPosTag");
-				if (tag != null) {
-					location += ":" + tag.startLn();
-				}
-				LineNumberTag tag2 = (LineNumberTag) call1.stmt.getTag("LineNumberTag");
-				if (tag2 != null) {
-					location += ":" + tag2.getLineNumber();
-				}
-
-				aNewTypeUsage.location = location;
-
-				aNewTypeUsage.underlyingLocals.add(call1);
-
-				InvokeExpr invokeExpr = call1.stmt.getInvokeExpr();
-				aNewTypeUsage.addMethodCall(collector.translateCallSignature(invokeExpr.getMethod()));
-
-				if (type instanceof NullType) {
-					aNewTypeUsage.type = invokeExpr.getMethod().getDeclaringClass().getType().toString();
-					aNewTypeUsage.sootType = invokeExpr.getMethod().getDeclaringClass().getType();
-				} else {
-					aNewTypeUsage.type = type.toString();
-					aNewTypeUsage.sootType = type;
-				}
-				setExtends(type, aNewTypeUsage);
-
-				// adding the link to the field
-				SootField sootField = instanceFieldDetector.pointsTo.get(call1.local);
-				if (sootField != null) {
-					crossMethodData.put(sootField, aNewTypeUsage);
-				}
-
-				lVariables.add(aNewTypeUsage);
-			}
-
-		}
+		List<MethodCall> methodCalls = extractMethodCalls(body);
+		List<TypeUsage> lVariables = extractTypeUsages(methodCalls, body);
 
 		// output the variables
 		for (TypeUsage aVariable : lVariables) {
@@ -161,6 +89,75 @@ public class TUBodyTransformer extends BodyTransformer {
 		return calls;
 	}
 
+	private List<TypeUsage> extractTypeUsages(List<MethodCall> methodCalls, Body body) {
+		List<TypeUsage> typeUsages = new ArrayList<TypeUsage>();
+		String methodContext = collector.translateContextSignature(body.getMethod());
+
+		for (MethodCall currentCall : methodCalls) {
+			Type type = currentCall.local.getType();
+			if (type instanceof NullType) {
+				type = currentCall.stmt.getInvokeExpr().getMethod().getDeclaringClass().getType();
+				// still couldn't determine type, skip this call
+				if (type instanceof NullType) continue;
+			}
+			collector.debug("v: " + type);
+
+			TypeUsage correspondingTypeUsage = findTypeUsage(currentCall, typeUsages);
+			if (correspondingTypeUsage != null
+
+					// if there is a cast this test avoids unsound data (e.g. two method calls of
+					// different classes in the same type-usage)
+					&& correspondingTypeUsage.type.equals(type.toString())
+
+			) {
+				correspondingTypeUsage.underlyingLocals.add(currentCall);
+				InvokeExpr invokeExpr = currentCall.stmt.getInvokeExpr();
+				correspondingTypeUsage.addMethodCall(collector.translateCallSignature(invokeExpr.getMethod()));
+				collector.debug("adding " + currentCall + " to " + correspondingTypeUsage);
+			} else {
+
+				TypeUsage aNewTypeUsage = new TypeUsage(methodContext);
+
+				collector.debug("creating " + aNewTypeUsage + " with " + currentCall.local);
+
+				String location = body.getMethod().getDeclaringClass().toString();
+				SourceLnPosTag tag = (SourceLnPosTag) currentCall.stmt.getTag("SourceLnPosTag");
+				if (tag != null) {
+					location += ":" + tag.startLn();
+				}
+				LineNumberTag tag2 = (LineNumberTag) currentCall.stmt.getTag("LineNumberTag");
+				if (tag2 != null) {
+					location += ":" + tag2.getLineNumber();
+				}
+
+				aNewTypeUsage.location = location;
+
+				aNewTypeUsage.underlyingLocals.add(currentCall);
+
+				InvokeExpr invokeExpr = currentCall.stmt.getInvokeExpr();
+				aNewTypeUsage.addMethodCall(collector.translateCallSignature(invokeExpr.getMethod()));
+
+				if (type instanceof NullType) {
+					aNewTypeUsage.type = invokeExpr.getMethod().getDeclaringClass().getType().toString();
+					aNewTypeUsage.sootType = invokeExpr.getMethod().getDeclaringClass().getType();
+				} else {
+					aNewTypeUsage.type = type.toString();
+					aNewTypeUsage.sootType = type;
+				}
+				setExtends(type, aNewTypeUsage);
+
+				// adding the link to the field
+				SootField sootField = instanceFieldDetector.pointsTo.get(currentCall.local);
+				if (sootField != null) {
+					crossMethodData.put(sootField, aNewTypeUsage);
+				}
+
+				typeUsages.add(aNewTypeUsage);
+			}
+		}
+		return typeUsages;
+	}
+	
 	private TypeUsage findTypeUsage(MethodCall call1, List<TypeUsage> lVariables) {
 
 		SootField sootField = instanceFieldDetector.pointsTo.get(call1.local);
