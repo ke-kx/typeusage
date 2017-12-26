@@ -52,31 +52,15 @@ public class TUBodyTransformer extends BodyTransformer {
 
 		aliasInfo = new LocalMustAliasAnalysis(new ExceptionalUnitGraph(body));
 
-		List<MethodCall> lCalls = new ArrayList<MethodCall>();
+		List<MethodCall> localCalls = extractMethodCalls(body);
 
-		//CONTINUE HERE: seems to go over whole body and collect all method calls (on an object)
-		for (Unit u : body.getUnits()) { // for each statement in method body
-			Stmt s = (Stmt) u;
-			collector.debug(s + "-" + s.getClass());
-			if (s.containsInvokeExpr()) {
-				InvokeExpr invokeExpr = s.getInvokeExpr();
-				collector.debug(invokeExpr.toString());
-				if (invokeExpr instanceof InstanceInvokeExpr
-				// && ! (invokeExpr instanceof SpecialInvokeExpr)
-				) {
-					Local local = (Local) ((InstanceInvokeExpr) invokeExpr).getBase();
-					MethodCall elem = new MethodCall(local, s);
-					lCalls.add(elem);
-					collector.debug(elem + " " + invokeExpr.getMethod().getDeclaringClass().getName());
-				}
-			}
-		}
+
 
 		instanceFieldDetector = new MayPointToTheSameInstanceField(body);
 
 		// creating the variables
 		List<TypeUsage> lVariables = new ArrayList<TypeUsage>();
-		for (MethodCall call1 : lCalls) {
+		for (MethodCall call1 : localCalls) {
 			TypeUsage correspondingTypeUsage = findTypeUsage(call1, lVariables);
 			Type type = call1.local.getType();
 			if (type instanceof NullType) {
@@ -151,6 +135,31 @@ public class TUBodyTransformer extends BodyTransformer {
 		}
 
 	} // end internalTransform
+	
+	/** Iterate through all statements in method body and collect method calls */
+	private List<MethodCall> extractMethodCalls(Body body) {
+		List<MethodCall> calls = new ArrayList<MethodCall>();
+
+		// for each statement in method body
+		for (Unit u : body.getUnits()) { 
+			Stmt s = (Stmt) u;
+			collector.debug(s + "-" + s.getClass());
+
+			if (s.containsInvokeExpr()) {
+				InvokeExpr invokeExpr = s.getInvokeExpr();
+				collector.debug(invokeExpr.toString());
+				if (invokeExpr instanceof InstanceInvokeExpr
+				// && ! (invokeExpr instanceof SpecialInvokeExpr)
+				) {
+					Local local = (Local) ((InstanceInvokeExpr) invokeExpr).getBase();
+					MethodCall elem = new MethodCall(local, s);
+					calls.add(elem);
+					collector.debug(elem + " " + invokeExpr.getMethod().getDeclaringClass().getName());
+				}
+			}
+		}
+		return calls;
+	}
 
 	private TypeUsage findTypeUsage(MethodCall call1, List<TypeUsage> lVariables) {
 
