@@ -1,6 +1,7 @@
 package typeusage.miner;
 
 import soot.Local;
+import soot.SootMethod;
 import soot.jimple.InvokeExpr;
 import soot.jimple.Stmt;
 
@@ -13,6 +14,10 @@ public class MethodCall {
 	public MethodCall(Local l, Stmt s) {
 		this.local = l;
 		this.stmt = s;
+	}
+	
+	public SootMethod getMethod() {
+		return stmt.getInvokeExpr().getMethod();
 	}
 
 	@Override

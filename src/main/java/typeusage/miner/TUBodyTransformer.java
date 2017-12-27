@@ -89,6 +89,7 @@ public class TUBodyTransformer extends BodyTransformer {
 		return calls;
 	}
 
+	//TODO improve this function more
 	private List<TypeUsage> extractTypeUsages(List<MethodCall> methodCalls, Body body) {
 		List<TypeUsage> typeUsages = new ArrayList<TypeUsage>();
 		String methodContext = collector.translateContextSignature(body.getMethod());
@@ -96,23 +97,18 @@ public class TUBodyTransformer extends BodyTransformer {
 		for (MethodCall currentCall : methodCalls) {
 			Type type = currentCall.local.getType();
 			if (type instanceof NullType) {
-				type = currentCall.stmt.getInvokeExpr().getMethod().getDeclaringClass().getType();
+				type = currentCall.getMethod().getDeclaringClass().getType();
 				// still couldn't determine type, skip this call
 				if (type instanceof NullType) continue;
 			}
 			collector.debug("v: " + type);
 
 			TypeUsage correspondingTypeUsage = findTypeUsage(currentCall, typeUsages);
-			if (correspondingTypeUsage != null
-
-					// if there is a cast this test avoids unsound data (e.g. two method calls of
-					// different classes in the same type-usage)
-					&& correspondingTypeUsage.type.equals(type.toString())
-
-			) {
+			// if there is a cast this test avoids unsound data (e.g. two method calls of different classes in the same type-usage)
+			if (correspondingTypeUsage != null && correspondingTypeUsage.type.equals(type.toString())) {
 				correspondingTypeUsage.underlyingLocals.add(currentCall);
-				InvokeExpr invokeExpr = currentCall.stmt.getInvokeExpr();
-				correspondingTypeUsage.addMethodCall(collector.translateCallSignature(invokeExpr.getMethod()));
+				//TODO shouldn't this be a function in typeUsage on stuff?
+				correspondingTypeUsage.addMethodCall(collector.translateCallSignature(currentCall.getMethod()));
 				collector.debug("adding " + currentCall + " to " + correspondingTypeUsage);
 			} else {
 
@@ -134,12 +130,11 @@ public class TUBodyTransformer extends BodyTransformer {
 
 				aNewTypeUsage.underlyingLocals.add(currentCall);
 
-				InvokeExpr invokeExpr = currentCall.stmt.getInvokeExpr();
-				aNewTypeUsage.addMethodCall(collector.translateCallSignature(invokeExpr.getMethod()));
+				aNewTypeUsage.addMethodCall(collector.translateCallSignature(currentCall.getMethod()));
 
 				if (type instanceof NullType) {
-					aNewTypeUsage.type = invokeExpr.getMethod().getDeclaringClass().getType().toString();
-					aNewTypeUsage.sootType = invokeExpr.getMethod().getDeclaringClass().getType();
+					aNewTypeUsage.type = currentCall.getMethod().getDeclaringClass().getType().toString();
+					aNewTypeUsage.sootType = currentCall.getMethod().getDeclaringClass().getType();
 				} else {
 					aNewTypeUsage.type = type.toString();
 					aNewTypeUsage.sootType = type;
@@ -158,26 +153,26 @@ public class TUBodyTransformer extends BodyTransformer {
 		return typeUsages;
 	}
 	
-	private TypeUsage findTypeUsage(MethodCall call1, List<TypeUsage> lVariables) {
+	private TypeUsage findTypeUsage(MethodCall call, List<TypeUsage> lVariables) {
 
-		SootField sootField = instanceFieldDetector.pointsTo.get(call1.local);
+		SootField sootField = instanceFieldDetector.pointsTo.get(call.local);
 		if (sootField != null) {
 			return crossMethodData.get(sootField);
 		}
 
 		for (TypeUsage aTypeUsage : lVariables) {
 			for (MethodCall e : aTypeUsage.underlyingLocals) {
-				if (call1.local == e.local) {
-					collector.debug(call1.local + " is same as " + e.local);
+				if (call.local == e.local) {
+					collector.debug(call.local + " is same as " + e.local);
 					collector.debug(aTypeUsage.type + " <-> " + e.stmt.getInvokeExpr().getMethod().getDeclaringClass());
 					return aTypeUsage;
 				}
 
-				if (aliasInfo.mustAlias(call1.local, call1.stmt, e.local, e.stmt)) {
-					collector.debug(call1.local + " alias to " + e.local);
+				if (aliasInfo.mustAlias(call.local, call.stmt, e.local, e.stmt)) {
+					collector.debug(call.local + " alias to " + e.local);
 					return aTypeUsage;
 				}
-				if (instanceFieldDetector.mayPointsToTheSameInstanceField(call1.local, e.local)) {
+				if (instanceFieldDetector.mayPointsToTheSameInstanceField(call.local, e.local)) {
 					return aTypeUsage;
 				}
 			}
