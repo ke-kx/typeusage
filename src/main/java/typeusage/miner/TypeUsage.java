@@ -38,10 +38,13 @@ public class TypeUsage {
 		return location;
 	}
 
-	//TODO FIX THIS!!!
 	@Override
 	public int hashCode() {
-		return -1;
+		final int prime = 31;
+		int result = 1;
+		result = prime * result + ((methodCalls == null) ? 0 : methodCalls.hashCode());
+		result = prime * result + ((type == null) ? 0 : type.hashCode());
+		return result;
 	};
 
 	@Override
