@@ -92,7 +92,6 @@ public class TUBodyTransformer extends BodyTransformer {
 	//TODO improve this function more
 	private List<TypeUsage> extractTypeUsages(List<MethodCall> methodCalls, Body body) {
 		List<TypeUsage> typeUsages = new ArrayList<TypeUsage>();
-		String methodContext = collector.translateContextSignature(body.getMethod());
 
 		for (MethodCall currentCall : methodCalls) {
 			Type type = currentCall.local.getType();
@@ -104,17 +103,24 @@ public class TUBodyTransformer extends BodyTransformer {
 			collector.debug("v: " + type);
 
 			TypeUsage correspondingTypeUsage = findTypeUsage(currentCall, typeUsages);
-			// if there is a cast this test avoids unsound data (e.g. two method calls of different classes in the same type-usage)
-			if (correspondingTypeUsage != null && correspondingTypeUsage.type.equals(type.toString())) {
+			// TypeUsage already exists, add currentCall
+			if (correspondingTypeUsage != null &&
+					// if there is a cast this test avoids unsound data (e.g. two method calls of different
+					//classes in the same type-usage)
+					correspondingTypeUsage.type.equals(type.toString())) {
+
+				//TODO shouldn't this be a function in typeUsage on stuff? (especially together as well!)
 				correspondingTypeUsage.underlyingLocals.add(currentCall);
-				//TODO shouldn't this be a function in typeUsage on stuff?
 				correspondingTypeUsage.addMethodCall(collector.translateCallSignature(currentCall.getMethod()));
 				collector.debug("adding " + currentCall + " to " + correspondingTypeUsage);
 			} else {
+				// Type usage doesn't exist yet, create object and add to typeUsages List
+				
+				//TODO all this stuff below should be in TypeUsage?!
+				String methodContext = collector.translateContextSignature(body.getMethod());
+				TypeUsage newTypeUsage = new TypeUsage(methodContext);
 
-				TypeUsage aNewTypeUsage = new TypeUsage(methodContext);
-
-				collector.debug("creating " + aNewTypeUsage + " with " + currentCall.local);
+				collector.debug("creating " + newTypeUsage + " with " + currentCall.local);
 
 				String location = body.getMethod().getDeclaringClass().toString();
 				SourceLnPosTag tag = (SourceLnPosTag) currentCall.stmt.getTag("SourceLnPosTag");
@@ -126,28 +132,28 @@ public class TUBodyTransformer extends BodyTransformer {
 					location += ":" + tag2.getLineNumber();
 				}
 
-				aNewTypeUsage.location = location;
+				newTypeUsage.location = location;
 
-				aNewTypeUsage.underlyingLocals.add(currentCall);
+				newTypeUsage.underlyingLocals.add(currentCall);
 
-				aNewTypeUsage.addMethodCall(collector.translateCallSignature(currentCall.getMethod()));
+				newTypeUsage.addMethodCall(collector.translateCallSignature(currentCall.getMethod()));
 
 				if (type instanceof NullType) {
-					aNewTypeUsage.type = currentCall.getMethod().getDeclaringClass().getType().toString();
-					aNewTypeUsage.sootType = currentCall.getMethod().getDeclaringClass().getType();
+					newTypeUsage.type = currentCall.getMethod().getDeclaringClass().getType().toString();
+					newTypeUsage.sootType = currentCall.getMethod().getDeclaringClass().getType();
 				} else {
-					aNewTypeUsage.type = type.toString();
-					aNewTypeUsage.sootType = type;
+					newTypeUsage.type = type.toString();
+					newTypeUsage.sootType = type;
 				}
-				setExtends(type, aNewTypeUsage);
+				setExtends(type, newTypeUsage);
 
 				// adding the link to the field
 				SootField sootField = instanceFieldDetector.pointsTo.get(currentCall.local);
 				if (sootField != null) {
-					crossMethodData.put(sootField, aNewTypeUsage);
+					crossMethodData.put(sootField, newTypeUsage);
 				}
 
-				typeUsages.add(aNewTypeUsage);
+				typeUsages.add(newTypeUsage);
 			}
 		}
 		return typeUsages;
