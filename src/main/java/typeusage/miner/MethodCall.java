@@ -8,6 +8,7 @@ import soot.jimple.Stmt;
 /** represents a method call on top of Soot's Local and Stmt */
 public class MethodCall {
 
+	//TODO add getter / setter as appropiate and remove public
 	public Local local;
 	public Stmt stmt;
 	
@@ -22,8 +23,6 @@ public class MethodCall {
 
 	@Override
 	public String toString() {
-		InvokeExpr invokeExpr = stmt.getInvokeExpr();
-		return local.toString() + " " + invokeExpr.getMethod().getName();
+		return local.toString() + " " + getMethod().getName();
 	}
-
 }

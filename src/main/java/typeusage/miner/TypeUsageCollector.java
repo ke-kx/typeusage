@@ -24,14 +24,14 @@ import soot.options.Options;
 public class TypeUsageCollector implements IMethodCallCollector {
 
 	/**
-	 * keep a type-usage if it's class' fully-qualified name starts with this prefix
+	 * Keep a type-usage if it's class' fully-qualified name starts with this prefix
 	 */
 	private String prefixToKeep = "";
 
-	/** directory which shall be processed by Soot */
+	/** Directory which shall be processed by Soot */
 	private String dirToProcess;
 
-	/** contains all relavant classpaths */
+	/** Contains all relavant classpaths */
 	final List<String> classpaths = new ArrayList<String>();
 
 	/** Constructor */
@@ -72,9 +72,9 @@ public class TypeUsageCollector implements IMethodCallCollector {
 		// can also be meth.getSignature
 		return meth.getName() + "()";
 		// or aVariable.addMethodCall(invokeExpr.getMethod().getName());
-
 	}
-
+	
+	//TODO replace with string.format ...
 	@SuppressWarnings("unchecked")
 	@Override
 	public String translateContextSignature(SootMethod meth) {

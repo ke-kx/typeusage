@@ -7,7 +7,13 @@ import java.util.Set;
 
 import org.apache.commons.lang.StringUtils;
 
+import soot.Body;
+import soot.NullType;
+import soot.RefType;
+import soot.SootClass;
 import soot.Type;
+import soot.tagkit.LineNumberTag;
+import soot.tagkit.SourceLnPosTag;
 
 /**
  * is an abstraction over Soot locals: Variable: 1 ----- 1..n Local
@@ -29,13 +35,57 @@ public class TypeUsage {
 	public TypeUsage(String _methodContext) {
 		methodContext = _methodContext;
 	}
+	
+	public TypeUsage(Body body, MethodCall call, Type type, IMethodCallCollector collector) {
+		methodContext = collector.translateContextSignature(body.getMethod());
+		collector.debug(String.format("Creating type usage for %s with %s", methodContext, call.local));
 
-	public void addMethodCall(String s) {
-		methodCalls.add("call:" + s);
+		location = body.getMethod().getDeclaringClass().toString();
+		SourceLnPosTag sourceLnTag = (SourceLnPosTag) call.stmt.getTag("SourceLnPosTag");
+		if (sourceLnTag != null) {
+			location += ":" + sourceLnTag.startLn();
+		}
+		LineNumberTag lineNumberTag = (LineNumberTag) call.stmt.getTag("LineNumberTag");
+		if (lineNumberTag != null) {
+			location += ":" + lineNumberTag.getLineNumber();
+		}
+
+		addMethodCall(call, collector);
+
+		if (type instanceof NullType) {
+			this.type = call.getMethod().getDeclaringClass().getType().toString();
+			sootType = call.getMethod().getDeclaringClass().getType();
+		} else {
+			this.type = type.toString();
+			sootType = type;
+		}
+		setExtends(type);
+	}
+
+	//TODO only do string work in for string method o.O - or easier like this?
+	public void addMethodCall(MethodCall call, IMethodCallCollector collector) {
+		underlyingLocals.add(call);
+		methodCalls.add("call:" + collector.translateCallSignature(call.getMethod()));
 	}
 
 	public String getLocation() {
 		return location;
+	}
+
+	/**
+	 * recursive method to get the complete type hierarchy type
+	 */
+	private void setExtends(Type type) {
+		if (type instanceof RefType) {
+			SootClass sc = ((RefType) type).getSootClass();
+			// adding the current type:
+			if (!sc.toString().equals("java.lang.Object")) {
+				_extends.add("extend:" + sc.toString());
+			}
+			if (sc.hasSuperclass()) {
+				setExtends(sc.getSuperclass().getType());
+			}
+		}
 	}
 
 	@Override
