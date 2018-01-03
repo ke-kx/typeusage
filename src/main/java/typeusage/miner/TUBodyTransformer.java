@@ -1,7 +1,6 @@
 package typeusage.miner;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -9,7 +8,6 @@ import soot.Body;
 import soot.BodyTransformer;
 import soot.Local;
 import soot.NullType;
-import soot.SootField;
 import soot.Type;
 import soot.Unit;
 import soot.jimple.InstanceInvokeExpr;
@@ -33,19 +31,17 @@ public class TUBodyTransformer extends BodyTransformer {
 	/** Used to determine if two locals point to the same instance field */ 
 	private InstanceFieldDetector instanceFieldDetector;
 
-	/** Keep data across methods to correctly collect type usage data on instance fields */
-	private HashMap<SootField, TypeUsage> crossMethodData = new HashMap<SootField, TypeUsage>();
-
 	/** Constructor */
 	public TUBodyTransformer(IMethodCallCollector m) {
 		collector = m;
+		instanceFieldDetector = new InstanceFieldDetector();
 	}
 
 	/** Actual worker function, is applied to each method body **/
 	@Override
 	protected void internalTransform(Body body, String phase, @SuppressWarnings("rawtypes") Map options) {
 		aliasInfo = new LocalMustAliasAnalysis(new ExceptionalUnitGraph(body));
-		instanceFieldDetector = new InstanceFieldDetector(body, crossMethodData);
+		instanceFieldDetector.readMethod(body);
 
 		List<MethodCall> methodCalls = extractMethodCalls(body);
 		List<TypeUsage> lVariables = extractTypeUsages(methodCalls, body);
@@ -118,10 +114,8 @@ public class TUBodyTransformer extends BodyTransformer {
 	
 	/** Go through list of typeUsages and find the one belonging to call */
 	private TypeUsage findTypeUsage(MethodCall call, List<TypeUsage> variables) {
-		//TODO this should be part of MayPointToTheSameInstanceField! + crossMethodData variable as well
-		SootField sootField = instanceFieldDetector.getField(call);
-		if (sootField != null) {
-			return crossMethodData.get(sootField);
+		if (instanceFieldDetector.pointsToInstanceField(call)) {
+			return instanceFieldDetector.getTypeUsage(call);
 		}
 
 		for (TypeUsage typeUsage : variables) {

@@ -17,15 +17,15 @@ import soot.jimple.Stmt;
  */
 public class InstanceFieldDetector {
 
-	/** Maps from a local to an instance field reference */
-	private HashMap<Value, SootField> pointsTo = new HashMap<Value, SootField>();
-	
-	/** Reference to crossMethodData from TUBodyTransformer */
-	private HashMap<SootField, TypeUsage> crossMethodData;
+	/** Keep data across methods to correctly collect type usage data on instance fields */
+	private HashMap<SootField, TypeUsage> crossMethodData = new HashMap<SootField, TypeUsage>();
 
-	/** Constructor. Populates pointsTo map by iterating over all statements */
-	public InstanceFieldDetector(Body body, HashMap<SootField, TypeUsage> cmd) {
-		crossMethodData = cmd;
+	/** Maps from a local to an instance field reference */
+	private HashMap<Value, SootField> pointsTo;
+	
+	/** Populates pointsTo map by iterating over all statements in current method */
+	public void readMethod(Body body) {
+		pointsTo = new HashMap<Value, SootField>();
 		
 		// simple resolving
 		for (Unit u : body.getUnits()) { // for each statement
@@ -73,9 +73,15 @@ public class InstanceFieldDetector {
 			crossMethodData.put(sootField, newTypeUsage);
 		}
 	}
+	
+	/** Return true if the call is invoked on a local which is referencing an instance field */
+	public boolean pointsToInstanceField(MethodCall call) {
+		return (pointsTo.get(call.local) != null);
+	}
 
-	/** Return corresponding field or NULL if the call doesn't relate to an instance field */
-	public SootField getField(MethodCall call) {
-		return pointsTo.get(call.local);
+	/** Return typeUsage belonging to the call */
+	public TypeUsage getTypeUsage(MethodCall call) {
+		if (!pointsToInstanceField(call)) throw new IllegalArgumentException("MethodCall must point to instance field!");
+		return crossMethodData.get(pointsTo.get(call.local));
 	}
 }
