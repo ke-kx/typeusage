@@ -119,7 +119,7 @@ public class TUBodyTransformer extends BodyTransformer {
 		}
 
 		for (TypeUsage typeUsage : variables) {
-			for (MethodCall e : typeUsage.underlyingLocals) {
+			for (MethodCall e : typeUsage.getUnderlyingLocals()) {
 				if (call.getLocal() == e.getLocal()) {
 					collector.debug(call.getLocal() + " is same as " + e.getLocal());
 					collector.debug(typeUsage.type + " <-> " + e.getMethod().getDeclaringClass());

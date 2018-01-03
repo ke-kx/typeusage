@@ -20,22 +20,31 @@ import soot.tagkit.SourceLnPosTag;
  *
  */
 public class TypeUsage {
-	// TODO comments for member variables!!! && correct visibility!
-	String location = "!";
+
+	/** Class in which the TypeUsage occurs */
+	private String location = "!";
+
+	/** Type of the used object in string form */
 	protected String type = "!";
-	Type sootType = null;
-	String methodContext = "!";
-	List<MethodCall> underlyingLocals = new ArrayList<MethodCall>();
-	protected final Set<String> methodCalls = new HashSet<String>();
-	Set<String> _extends = new HashSet<String>();
 
-	public TypeUsage() {
-	}
+	/** Reference to sootType of used object */
+	private Type sootType = null;
 
-	public TypeUsage(String _methodContext) {
-		methodContext = _methodContext;
-	}
+	/** Method in which the type usage occurs ("context" in the DMMC paper) */
+	private String methodContext = "!";
+
+	/** List of methodCalls belonging to this TypeUsage */
+	private List<MethodCall> underlyingLocals = new ArrayList<MethodCall>();
 	
+	//TODO this could potentially be replaced by just the arrayList, correct?
+	/** String form of methodCalls belonging to this TU */
+	protected final Set<String> methodCalls = new HashSet<String>();
+
+	private Set<String> _extends = new HashSet<String>();
+
+	protected TypeUsage() {
+	}
+
 	public TypeUsage(Body body, MethodCall call, Type type, IMethodCallCollector collector) {
 		methodContext = collector.translateContextSignature(body.getMethod());
 		collector.debug(String.format("Creating type usage for %s with %s", methodContext, call.getLocal()));
@@ -62,16 +71,6 @@ public class TypeUsage {
 		setExtends(type);
 	}
 
-	//TODO only do string work in for string method o.O - or easier like this?
-	public void addMethodCall(MethodCall call, IMethodCallCollector collector) {
-		underlyingLocals.add(call);
-		methodCalls.add("call:" + collector.translateCallSignature(call.getMethod()));
-	}
-
-	public String getLocation() {
-		return location;
-	}
-
 	/**
 	 * recursive method to get the complete type hierarchy type
 	 */
@@ -86,6 +85,20 @@ public class TypeUsage {
 				setExtends(sc.getSuperclass().getType());
 			}
 		}
+	}
+
+	//TODO only do string work in for string method o.O - or easier like this?
+	public void addMethodCall(MethodCall call, IMethodCallCollector collector) {
+		underlyingLocals.add(call);
+		methodCalls.add("call:" + collector.translateCallSignature(call.getMethod()));
+	}
+
+	public String getLocation() {
+		return location;
+	}
+	
+	public List<MethodCall> getUnderlyingLocals() {
+		return underlyingLocals;
 	}
 
 	@Override
