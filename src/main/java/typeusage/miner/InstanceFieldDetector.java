@@ -68,7 +68,7 @@ public class InstanceFieldDetector {
 
 	/** Add type usage to cross method data if it belongs to an instance field */
 	public void addIfAppropiate(MethodCall call, TypeUsage newTypeUsage) {
-		SootField sootField = pointsTo.get(call.local);
+		SootField sootField = pointsTo.get(call.getLocal());
 		if (sootField != null) {
 			crossMethodData.put(sootField, newTypeUsage);
 		}
@@ -76,12 +76,12 @@ public class InstanceFieldDetector {
 	
 	/** Return true if the call is invoked on a local which is referencing an instance field */
 	public boolean pointsToInstanceField(MethodCall call) {
-		return (pointsTo.get(call.local) != null);
+		return (pointsTo.get(call.getLocal()) != null);
 	}
 
 	/** Return typeUsage belonging to the call */
 	public TypeUsage getTypeUsage(MethodCall call) {
 		if (!pointsToInstanceField(call)) throw new IllegalArgumentException("MethodCall must point to instance field!");
-		return crossMethodData.get(pointsTo.get(call.local));
+		return crossMethodData.get(pointsTo.get(call.getLocal()));
 	}
 }

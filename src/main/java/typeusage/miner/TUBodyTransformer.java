@@ -84,7 +84,7 @@ public class TUBodyTransformer extends BodyTransformer {
 		List<TypeUsage> typeUsages = new ArrayList<TypeUsage>();
 
 		for (MethodCall currentCall : methodCalls) {
-			Type type = currentCall.local.getType();
+			Type type = currentCall.getLocal().getType();
 			if (type instanceof NullType) {
 				type = currentCall.getMethod().getDeclaringClass().getType();
 				// still couldn't determine type, skip this call
@@ -120,17 +120,17 @@ public class TUBodyTransformer extends BodyTransformer {
 
 		for (TypeUsage typeUsage : variables) {
 			for (MethodCall e : typeUsage.underlyingLocals) {
-				if (call.local == e.local) {
-					collector.debug(call.local + " is same as " + e.local);
+				if (call.getLocal() == e.getLocal()) {
+					collector.debug(call.getLocal() + " is same as " + e.getLocal());
 					collector.debug(typeUsage.type + " <-> " + e.getMethod().getDeclaringClass());
 					return typeUsage;
 				}
 
-				if (aliasInfo.mustAlias(call.local, call.stmt, e.local, e.stmt)) {
-					collector.debug(call.local + " alias to " + e.local);
+				if (aliasInfo.mustAlias(call.getLocal(), call.getStmt(), e.getLocal(), e.getStmt())) {
+					collector.debug(call.getLocal() + " alias to " + e.getLocal());
 					return typeUsage;
 				}
-				if (instanceFieldDetector.mayPointToSameInstanceField(call.local, e.local)) {
+				if (instanceFieldDetector.mayPointToSameInstanceField(call.getLocal(), e.getLocal())) {
 					return typeUsage;
 				}
 			}

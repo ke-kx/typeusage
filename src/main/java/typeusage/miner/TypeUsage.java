@@ -38,14 +38,14 @@ public class TypeUsage {
 	
 	public TypeUsage(Body body, MethodCall call, Type type, IMethodCallCollector collector) {
 		methodContext = collector.translateContextSignature(body.getMethod());
-		collector.debug(String.format("Creating type usage for %s with %s", methodContext, call.local));
+		collector.debug(String.format("Creating type usage for %s with %s", methodContext, call.getLocal()));
 
 		location = body.getMethod().getDeclaringClass().toString();
-		SourceLnPosTag sourceLnTag = (SourceLnPosTag) call.stmt.getTag("SourceLnPosTag");
+		SourceLnPosTag sourceLnTag = (SourceLnPosTag) call.getStmt().getTag("SourceLnPosTag");
 		if (sourceLnTag != null) {
 			location += ":" + sourceLnTag.startLn();
 		}
-		LineNumberTag lineNumberTag = (LineNumberTag) call.stmt.getTag("LineNumberTag");
+		LineNumberTag lineNumberTag = (LineNumberTag) call.getStmt().getTag("LineNumberTag");
 		if (lineNumberTag != null) {
 			location += ":" + lineNumberTag.getLineNumber();
 		}
