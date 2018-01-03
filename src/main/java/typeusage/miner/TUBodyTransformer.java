@@ -9,8 +9,6 @@ import soot.Body;
 import soot.BodyTransformer;
 import soot.Local;
 import soot.NullType;
-import soot.RefType;
-import soot.SootClass;
 import soot.SootField;
 import soot.Type;
 import soot.Unit;
@@ -18,8 +16,6 @@ import soot.jimple.InstanceInvokeExpr;
 import soot.jimple.InvokeExpr;
 import soot.jimple.Stmt;
 import soot.jimple.toolkits.pointer.LocalMustAliasAnalysis;
-import soot.tagkit.LineNumberTag;
-import soot.tagkit.SourceLnPosTag;
 import soot.toolkits.graph.ExceptionalUnitGraph;
 
 /**
@@ -31,24 +27,25 @@ public class TUBodyTransformer extends BodyTransformer {
 	/** Reference to parent collector */
 	private IMethodCallCollector collector;
 
-	/** Constructor */
-	public TUBodyTransformer(IMethodCallCollector m) {
-		this.collector = m;
-	}
-
 	/** Used to determine if two local variables point to the same object? */
-	LocalMustAliasAnalysis aliasInfo;
+	private LocalMustAliasAnalysis aliasInfo;
 
 	/** Used to determine if two locals point to the same instance field */ 
-	MayPointToTheSameInstanceField instanceFieldDetector;
+	private InstanceFieldDetector instanceFieldDetector;
 
-	HashMap<SootField, TypeUsage> crossMethodData = new HashMap<SootField, TypeUsage>();
+	/** Keep data across methods to correctly collect type usage data on instance fields */
+	private HashMap<SootField, TypeUsage> crossMethodData = new HashMap<SootField, TypeUsage>();
+
+	/** Constructor */
+	public TUBodyTransformer(IMethodCallCollector m) {
+		collector = m;
+	}
 
 	/** Actual worker function, is applied to each method body **/
 	@Override
 	protected void internalTransform(Body body, String phase, @SuppressWarnings("rawtypes") Map options) {
 		aliasInfo = new LocalMustAliasAnalysis(new ExceptionalUnitGraph(body));
-		instanceFieldDetector = new MayPointToTheSameInstanceField(body);
+		instanceFieldDetector = new InstanceFieldDetector(body, crossMethodData);
 
 		List<MethodCall> methodCalls = extractMethodCalls(body);
 		List<TypeUsage> lVariables = extractTypeUsages(methodCalls, body);
@@ -109,16 +106,11 @@ public class TUBodyTransformer extends BodyTransformer {
 				collector.debug("adding " + currentCall + " to " + correspondingTypeUsage);
 			} else {
 				// Type usage doesn't exist yet, create object and add to typeUsages List
-				
 				TypeUsage newTypeUsage = new TypeUsage(body, currentCall, type, collector);
-				
-				// adding the link to the field
-				SootField sootField = instanceFieldDetector.pointsTo.get(currentCall.local);
-				if (sootField != null) {
-					crossMethodData.put(sootField, newTypeUsage);
-				}
-
 				typeUsages.add(newTypeUsage);
+
+				// add link to instance field if it exists
+				instanceFieldDetector.addIfAppropiate(currentCall, newTypeUsage);
 			}
 		}
 		return typeUsages;
@@ -126,7 +118,8 @@ public class TUBodyTransformer extends BodyTransformer {
 	
 	/** Go through list of typeUsages and find the one belonging to call */
 	private TypeUsage findTypeUsage(MethodCall call, List<TypeUsage> variables) {
-		SootField sootField = instanceFieldDetector.pointsTo.get(call.local);
+		//TODO this should be part of MayPointToTheSameInstanceField! + crossMethodData variable as well
+		SootField sootField = instanceFieldDetector.getField(call);
 		if (sootField != null) {
 			return crossMethodData.get(sootField);
 		}
@@ -143,7 +136,7 @@ public class TUBodyTransformer extends BodyTransformer {
 					collector.debug(call.local + " alias to " + e.local);
 					return typeUsage;
 				}
-				if (instanceFieldDetector.mayPointsToTheSameInstanceField(call.local, e.local)) {
+				if (instanceFieldDetector.mayPointToSameInstanceField(call.local, e.local)) {
 					return typeUsage;
 				}
 			}

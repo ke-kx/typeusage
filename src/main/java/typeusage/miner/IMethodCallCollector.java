@@ -13,6 +13,7 @@ public interface IMethodCallCollector {
 	 */
 	String translateCallSignature(SootMethod meth);
 
+	/** Change the context signature to the required format */
 	String translateContextSignature(SootMethod meth);
 
 	/**

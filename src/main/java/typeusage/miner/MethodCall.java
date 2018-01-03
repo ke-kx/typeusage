@@ -2,7 +2,6 @@ package typeusage.miner;
 
 import soot.Local;
 import soot.SootMethod;
-import soot.jimple.InvokeExpr;
 import soot.jimple.Stmt;
 
 /** represents a method call on top of Soot's Local and Stmt */
