@@ -10,7 +10,7 @@ public class Main {
 		if (args.length > 0) {
 			toBeAnalyzed = args[0];
 			if (args.length > 1) {
-				c.setPrefix(args[1]);
+				c.setPrefixToKeep(args[1]);
 			}
 		} else {
 			toBeAnalyzed = DEFAULT_DIR;

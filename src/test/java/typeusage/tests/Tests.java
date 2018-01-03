@@ -1,13 +1,17 @@
 package typeusage.tests;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
+import java.io.File;
+import java.io.IOException;
+
+import org.apache.commons.io.FileUtils;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
 import typeusage.miner.Main;
-import typeusage.miner.TypeUsage;
 
 public class Tests {
 
@@ -74,6 +78,10 @@ public class Tests {
 
 	@AfterClass
 	public static void after() {
+		System.out.println(ExpectedResult.VALUE);
 		System.out.println(c.data);
+		assertEquals("Output has diverged from expected one", ExpectedResult.VALUE, c.data.toString());
+
+
 	}
 }

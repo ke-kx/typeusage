@@ -23,14 +23,21 @@ import soot.options.Options;
  */
 public class TypeUsageCollector implements IMethodCallCollector {
 
-	/** The number of collected traces */
-	int nbTraces;
+	/**
+	 * keep a type-usage if it's class' fully-qualified name starts with this prefix
+	 */
+	private String prefixToKeep = "";
 
-	String filter = "";
+	/** directory which shall be processed by Soot */
+	private String dirToProcess;
+
+	/** contains all relavant classpaths */
+	final List<String> classpaths = new ArrayList<String>();
 
 	/** Constructor */
 	public TypeUsageCollector() throws Exception {
-		//TODO blogpost claims this option is not actually recommended? http://www.bodden.de/2008/08/21/soot-command-line/
+		// TODO blogpost claims this option is not actually recommended?
+		// http://www.bodden.de/2008/08/21/soot-command-line/
 		Options.v().set_allow_phantom_refs(true);
 	}
 
@@ -51,15 +58,8 @@ public class TypeUsageCollector implements IMethodCallCollector {
 	/** Assemble arguments by setting classpath and processed directory */
 	protected String[] buildSootArgs() {
 		String[] myArgs = { "-soot-classpath", getClassPath(), "-pp", // prepend is not required
-				"-process-dir", getProcessDir(), };
+				"-process-dir", dirToProcess, };
 		return myArgs;
-	}
-
-	final List<String> classpath = new ArrayList<String>();
-
-	public String getClassPath() {
-		classpath.add(getProcessDir());
-		return StringUtils.join(classpath, ":");
 	}
 
 	@Override
@@ -97,34 +97,41 @@ public class TypeUsageCollector implements IMethodCallCollector {
 		return sb.toString();
 	}
 
-	public String getProcessDir() {
-		return dirToProcess;
-	}
-
-	@Override
-	public String getPackagePrefixToKeep() {
-		return filter;
-	}
-
-	public void addToClassPath(String jar) {
-		if (!new File(jar).exists()) {
-			throw new IllegalArgumentException(jar + " must be a valid file");
-		}
-		classpath.add(jar);
-	}
-
-	String dirToProcess;
-
-	public void setDirToProcess(String dirToProcess) {
-		this.dirToProcess = dirToProcess;
-	}
-
 	@Override
 	public void debug(String msg) {
 		// subclasses may override
 	}
 
-	public void setPrefix(String prefix) {
-		this.filter = prefix;
+	/** @see #prefixToKeep */
+	@Override
+	public String getPrefixToKeep() {
+		return prefixToKeep;
+	}
+
+	/** @see #prefixToKeep */
+	public void setPrefixToKeep(String prefix) {
+		this.prefixToKeep = prefix;
+	}
+
+	/**
+	 * Return classpath array joined by ":" and including the directory to process
+	 */
+	public String getClassPath() {
+		if (!classpaths.contains(dirToProcess))
+			classpaths.add(dirToProcess);
+		return StringUtils.join(classpaths, ":");
+	}
+
+	/** Adds a new file to the classpath as long as it exists */
+	public void addToClassPath(String jar) {
+		if (!new File(jar).exists()) {
+			throw new IllegalArgumentException(jar + " must be a valid file");
+		}
+		classpaths.add(jar);
+	}
+
+	/** @see #dirToProcess */
+	public void setDirToProcess(String dirToProcess) {
+		this.dirToProcess = dirToProcess;
 	}
 }

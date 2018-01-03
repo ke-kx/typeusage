@@ -44,11 +44,9 @@ public class TUBodyTransformer extends BodyTransformer {
 
 	HashMap<SootField, TypeUsage> crossMethodData = new HashMap<SootField, TypeUsage>();
 
-	/**TODO REFACTOR!!! (way too long...) */
+	/** Actual worker function, is applied to each method body **/
 	@Override
 	protected void internalTransform(Body body, String phase, @SuppressWarnings("rawtypes") Map options) {
-
-
 		aliasInfo = new LocalMustAliasAnalysis(new ExceptionalUnitGraph(body));
 		instanceFieldDetector = new MayPointToTheSameInstanceField(body);
 
@@ -57,12 +55,11 @@ public class TUBodyTransformer extends BodyTransformer {
 
 		// output the variables
 		for (TypeUsage aVariable : lVariables) {
-			if ((aVariable.type.startsWith(collector.getPackagePrefixToKeep()))) {
+			if ((aVariable.type.startsWith(collector.getPrefixToKeep()))) {
 				collector.receive(aVariable);
 			}
 		}
-
-	} // end internalTransform
+	} 
 	
 	/** Iterate through all statements in method body and collect method calls */
 	private List<MethodCall> extractMethodCalls(Body body) {
@@ -70,17 +67,17 @@ public class TUBodyTransformer extends BodyTransformer {
 
 		// for each statement in method body
 		for (Unit u : body.getUnits()) { 
-			Stmt s = (Stmt) u;
-			collector.debug(s + "-" + s.getClass());
+			Stmt statement = (Stmt) u;
+			collector.debug(statement + "-" + statement.getClass());
 
-			if (s.containsInvokeExpr()) {
-				InvokeExpr invokeExpr = s.getInvokeExpr();
+			if (statement.containsInvokeExpr()) {
+				InvokeExpr invokeExpr = statement.getInvokeExpr();
 				collector.debug(invokeExpr.toString());
 				if (invokeExpr instanceof InstanceInvokeExpr
 				// && ! (invokeExpr instanceof SpecialInvokeExpr)
 				) {
 					Local local = (Local) ((InstanceInvokeExpr) invokeExpr).getBase();
-					MethodCall elem = new MethodCall(local, s);
+					MethodCall elem = new MethodCall(local, statement);
 					calls.add(elem);
 					collector.debug(elem + " " + invokeExpr.getMethod().getDeclaringClass().getName());
 				}
