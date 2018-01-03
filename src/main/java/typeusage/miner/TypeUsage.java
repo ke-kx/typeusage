@@ -14,14 +14,31 @@ import soot.Type;
  *
  */
 public class TypeUsage {
+	// TODO comments for member variables!!! && correct visibility!
 	String location = "!";
-	String type = "!";
+	protected String type = "!";
 	Type sootType = null;
 	String methodContext = "!";
 	List<MethodCall> underlyingLocals = new ArrayList<MethodCall>();
-	private final Set<String> methodCalls = new HashSet<String>();
+	protected final Set<String> methodCalls = new HashSet<String>();
 	Set<String> _extends = new HashSet<String>();
 
+	public TypeUsage() {
+	}
+
+	public TypeUsage(String _methodContext) {
+		methodContext = _methodContext;
+	}
+
+	public void addMethodCall(String s) {
+		methodCalls.add("call:" + s);
+	}
+
+	public String getLocation() {
+		return location;
+	}
+
+	//TODO FIX THIS!!!
 	@Override
 	public int hashCode() {
 		return -1;
@@ -35,54 +52,9 @@ public class TypeUsage {
 		return other.type.equals(this.type) && other.methodCalls.equals(this.methodCalls);
 	};
 
-	public void addMethodCall(String s) {
-		methodCalls.add("call:" + s);
-	}
-
-	public TypeUsage(String _methodContext) {
-		methodContext = _methodContext;
-	}
-
-	public TypeUsage() {
-	}
-
-	public TypeUsage call(String call) {
-		addMethodCall(call);
-		return this;
-	}
-
-	public TypeUsage type(String type) {
-		this.type = type;
-		return this;
-	}
-
 	@Override
 	public String toString() {
-		return repLocationContextTypeMethodCalls();
+		return String.format("location:%s context:%s type:%s %s %s", 
+				location, methodContext, type, StringUtils.join(methodCalls, " "), StringUtils.join(_extends, " "));
 	}
-
-	public String getLocation() {
-		return location;
-	}
-
-	public String repLocationContextTypeMethodCalls() {
-		String sep = " ";
-		return "location:" + location + sep + repContextTypeMethodCalls() + sep + StringUtils.join(_extends, sep);
-	}
-
-	public String repContextTypeMethodCalls() {
-		String sep = " ";
-		return "context:" + methodContext + sep + repTypeMethodCalls();
-	}
-
-	public String repTypeMethodCalls() {
-		String sep = " ";
-		return "type:" + type + sep + repMethodCalls();
-	}
-
-	public String repMethodCalls() {
-		String sep = " ";
-		return StringUtils.join(methodCalls, sep);
-	}
-
 }

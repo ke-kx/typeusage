@@ -21,8 +21,8 @@ public class Tests {
 	}
 
 	// utility method
-	private TypeUsage tu() {
-		return new TypeUsage();
+	private TestTypeUsage tu() {
+		return new TestTypeUsage();
 	}
 
 	@Test
