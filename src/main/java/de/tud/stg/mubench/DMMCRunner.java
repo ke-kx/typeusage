@@ -154,7 +154,7 @@ public class DMMCRunner extends MuBenchRunner {
 	}
 
 	private static Set<String> getPresentCalls(ObjectTrace target) {
-		return target.calls.stream().map(call -> call.split(":")[1]).collect(Collectors.toSet());
+		return target.getCalls().stream().map(call -> call.split(":")[1]).collect(Collectors.toSet());
 	}
 
 	private static List<String> getMissingCalls(ObjectTrace target) {

@@ -13,6 +13,7 @@ public class DatasetReader {
 		return readObjects(filename, ObjectTrace.class);
 	}
 
+	//TODO replace this tokenizer with a string split oä -> also get rid of TU setters and have propper warnings if input is missformed
 	public <T extends TypeUsage> List<T> readObjects(String filename, Class<T> clasz) throws Exception {
 		List<T> readObjects = new LinkedList<T>();
 
@@ -20,7 +21,9 @@ public class DatasetReader {
 			String line;
 			while ((line = reader.readLine()) != null) {
 				StringTokenizer tokenizer = new StringTokenizer(line, " ");
+				
 				T obj = clasz.newInstance();
+
 				while (tokenizer.hasMoreTokens()) {
 					String token = tokenizer.nextToken();
 					if (token.startsWith("location:")) {
@@ -30,7 +33,7 @@ public class DatasetReader {
 					} else if (token.startsWith("type:")) {
 						obj.setType(token);
 					} else if (token.startsWith("call:")) {
-						obj.calls.add(token);
+						obj.addCall(token);
 					} else if (token.startsWith("extend:")) {
 						/* nothing */
 					} else {

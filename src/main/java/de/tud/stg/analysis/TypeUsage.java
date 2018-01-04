@@ -16,7 +16,7 @@ public abstract class TypeUsage {
 	protected String type;
 	
 	/** Calls made on the object */
-	public Set<String> calls = new HashSet<String>();
+	protected Set<String> calls = new HashSet<String>();
 	
 	public TypeUsage (String location, String context, String type) {
 		this.location = location;
@@ -50,6 +50,16 @@ public abstract class TypeUsage {
 		return this;
 	}
 
+	//TODO is this really necessary? only used in DMMCRunner, purpose not yet clear
+	public Set<String> getCalls() {
+		return calls;
+	}
+
+	/** Add another call to this TypeUsage */
+	public void addCall(String call) {
+		calls.add(call);
+	}
+	
 	@Override
 	public String toString() {
 		return context + " " + type + " " + StringUtils.join(calls, " ");

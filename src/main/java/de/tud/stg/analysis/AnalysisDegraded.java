@@ -8,6 +8,8 @@ import java.util.List;
 
 public class AnalysisDegraded extends ComputePrecisionAndRecall {
 
+	private static final int OUTPUT_STEP_SIZE = 1000;
+
 	public AnalysisDegraded(String datasetFileName) {
 		super(datasetFileName);
 	}
@@ -20,7 +22,8 @@ public class AnalysisDegraded extends ComputePrecisionAndRecall {
 		System.out.println("filtering special cases (keeping only redundant type usages)...");
 		for (ObjectTrace o1 : input) {
 			boolean unique = true;
-			System.out.print("\r" + (i++) + "/" + input.size());
+			i++;
+			if ((i % OUTPUT_STEP_SIZE) == 0) System.out.print("\r" + i + "/" + input.size());
 			for (ObjectTrace o2 : input) {
 				// we need to have at least on redundancy
 				// and is better from a methodocological viewpoint
@@ -40,7 +43,8 @@ public class AnalysisDegraded extends ComputePrecisionAndRecall {
 		int j = 0;
 		System.out.println("\nremoving method calls one by one ...");
 		for (ObjectTrace o1 : filtered) {
-			System.out.print("\r" + (j++) + "/" + filtered.size());
+			j++;
+			if ((j % OUTPUT_STEP_SIZE) == 0)	System.out.print("\r" + j + "/" + filtered.size());
 
 			// to avoid a java.lang.IndexOutOfBoundsException: Index: 0, Size: 0
 			// since we wil remove one method call

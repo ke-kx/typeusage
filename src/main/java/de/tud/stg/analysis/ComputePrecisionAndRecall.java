@@ -30,6 +30,8 @@ public abstract class ComputePrecisionAndRecall {
 	boolean display_tmp = false;
 
 	protected String datasetFileName;
+	
+	private static final int OUTPUT_STEP_SIZE = 1000;
 
 	/** Constructor */
 	public ComputePrecisionAndRecall(String datasetFileName) {
@@ -94,7 +96,7 @@ public abstract class ComputePrecisionAndRecall {
 		System.out.println("\ncomputing precision and recall...");
 		for (DegradedObjectTrace degradedRecord : testCases) {
 			{
-				System.out.print("\r" + nanalyzed + "/" + testCases.size());
+				if ((nanalyzed % OUTPUT_STEP_SIZE) == 0) System.out.print("\r" + nanalyzed + "/" + testCases.size());
 				engine.simulateQuery(degradedRecord);
 
 				double strangeness = degradedRecord.strangeness();
