@@ -6,13 +6,13 @@ public class Main {
 
 	public static void main(String[] args) throws Exception {
 		FileTypeUsageCollector c = new FileTypeUsageCollector("output/output.dat");
-		String toBeAnalyzed = null;
+		String toBeAnalyzed = null; //"/home/tesuji/jabref";
 		if (args.length > 0) {
 			toBeAnalyzed = args[0];
 			if (args.length > 1) {
 				c.setPrefixToKeep(args[1]);
 			}
-		} else {
+		} else if (toBeAnalyzed == null) {
 			toBeAnalyzed = DEFAULT_DIR;
 		}
 		c.setDirToProcess(toBeAnalyzed);
