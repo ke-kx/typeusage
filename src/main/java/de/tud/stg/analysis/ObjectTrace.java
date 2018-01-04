@@ -53,4 +53,19 @@ public class ObjectTrace extends TypeUsage {
 		return ((double) nalmostequals) / (1 + nequals + nalmostequals);
 	}
 
+	@Override
+	public String toString() {
+		String ret = "\n\n\n -------------------- \n";
+		ret += "Strange: " + strangeness() + "\n";
+		ret += "Strangev2: " + strangeness2() + "\n";
+		ret += "Equals: " + nequals + "\n";
+		ret += "Almost: " + nalmostequals + "\n";
+		ret += "\tlocation: " + getLocation() + "\n";
+		ret += "\tlocation: " + rowNumber + "\n";
+		ret += "\tcontext: " + getContext() + "\n";
+		ret += "\ttype: " + getType() + "\n";
+		ret += "\t\tpresent" + calls + "\n";
+		ret += "\t\tmissing" + missingcalls + "\n";
+		return ret;
+	}
 }

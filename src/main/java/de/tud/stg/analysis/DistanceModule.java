@@ -49,22 +49,6 @@ public final class DistanceModule {
 		return l;
 	}
 
-	public void printMissingCalls(ObjectTrace o1, Writer w) throws IOException {
-		w.write("\n\n\n -------------------- \n");
-		w.write("Strange: " + o1.strangeness() + "\n");
-		w.write("Strangev2: " + o1.strangeness2() + "\n");
-		w.write("Equals: " + o1.nequals + "\n");
-		w.write("Almost: " + o1.nalmostequals + "\n");
-		w.write("\tlocation: " + o1.getLocation() + "\n");
-		w.write("\tlocation: " + o1.rowNumber + "\n");
-		w.write("\tcontext: " + o1.getContext() + "\n");
-		w.write("\ttype: " + o1.getType() + "\n");
-		// System.out.println(" "+o1.calls.get(0).getLineNumber());
-		w.write("\t\tpresent" + o1.calls + "\n");
-		w.write("\t\tmissing" + o1.missingcalls + "\n");
-
-	}
-
 	public boolean almostEquals(ObjectTrace this_, TypeUsage ob) {
 
 		if (this_.calls.size() >= ob.calls.size())
