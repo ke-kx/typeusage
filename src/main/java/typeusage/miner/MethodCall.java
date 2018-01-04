@@ -7,7 +7,10 @@ import soot.jimple.Stmt;
 /** represents a method call on top of Soot's Local and Stmt */
 public class MethodCall {
 
+	/** Local variable on which the call is executed */
 	private Local local;
+	
+	/** Whole statement which contains the methodCall */
 	private Stmt stmt;
 	
 	public MethodCall(Local l, Stmt s) {
@@ -15,6 +18,7 @@ public class MethodCall {
 		this.stmt = s;
 	}
 	
+	/** Return only the actual method which is getting called */
 	public SootMethod getMethod() {
 		return stmt.getInvokeExpr().getMethod();
 	}
