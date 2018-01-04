@@ -8,6 +8,10 @@ import java.util.List;
 
 public class AnalysisDegraded extends ComputePrecisionAndRecall {
 
+	public AnalysisDegraded(String datasetFileName) {
+		super(datasetFileName);
+	}
+
 	@Override
 	public List<DegradedObjectTrace> createEvaluationData(List<ObjectTrace> input) {
 		// we don't use input
@@ -68,7 +72,7 @@ public class AnalysisDegraded extends ComputePrecisionAndRecall {
 
 	@Override
 	protected BufferedWriter getOutputWriter() throws IOException {
-		return new BufferedWriter(new FileWriter(getDatasetFileName().replace('/', '-') + "-degraded.dat"));
+		return new BufferedWriter(new FileWriter(datasetFileName.replace('/', '-') + "-degraded.dat"));
 	}
 
 }

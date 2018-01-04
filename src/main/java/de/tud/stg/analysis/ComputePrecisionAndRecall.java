@@ -19,17 +19,28 @@ public abstract class ComputePrecisionAndRecall {
 
 	private List<ObjectTrace> l;
 
-	public List<ObjectTrace> getEvaluationDataSet() {
-		if (l == null)
-			throw new RuntimeException();
-		return l;
-	}
-
 	// default engine
 	private EcoopEngine ecoopEngine;
 	protected IMissingCallEngine engine;
 
 	private String suffix = ""; // default value
+
+	public abstract List<DegradedObjectTrace> createEvaluationData(List<ObjectTrace> input);
+
+	boolean display_tmp = false;
+
+	protected String datasetFileName;
+
+	public ComputePrecisionAndRecall(String datasetFileName) {
+		super();
+		this.datasetFileName = datasetFileName;
+	}
+
+	public List<ObjectTrace> getEvaluationDataSet() {
+		if (l == null)
+			throw new RuntimeException();
+		return l;
+	}
 
 	public void setSuffix(String suffix) {
 		this.suffix = suffix;
@@ -49,10 +60,6 @@ public abstract class ComputePrecisionAndRecall {
 			throw new RuntimeException();
 		l = list;
 	}
-
-	public abstract List<DegradedObjectTrace> createEvaluationData(List<ObjectTrace> input);
-
-	boolean display_tmp = false;
 
 	public String run() throws Exception {
 
@@ -180,7 +187,7 @@ public abstract class ComputePrecisionAndRecall {
 		}
 
 		IOUtils.copy(new StringBufferInputStream(StringUtils.join(overview, "\n")),
-				new FileOutputStream(getDatasetFileName().replace('/', '-') + getClass().getName() + suffix));
+				new FileOutputStream(datasetFileName.replace('/', '-') + getClass().getName() + suffix));
 		return "\n" + StringUtils.join(overview, "\n");
 	}
 
@@ -191,30 +198,14 @@ public abstract class ComputePrecisionAndRecall {
 	public String getExperimentParameters() throws Exception {
 
 		List<String> result = new ArrayList<String>();
-		result.add("dataset(" + getDatasetFileName() + ")");
+		result.add("dataset(" + datasetFileName + ")");
 		result.addAll(getEngine().getParameters());
 		return StringUtils.join(result, " ");
 	}
 
-	private String datasetFileName = null;
-
-	public String getDatasetFileName() {
-		if (datasetFileName == null) {
-			throw new RuntimeException();
-		}
-		return datasetFileName;
-	}
-
-	public void setDatasetFileName(String s) {
-		if (datasetFileName != null) {
-			throw new RuntimeException("already set");
-		}
-		datasetFileName = s;
-	}
-
 	/** default dataset, noth a getter and a setter */
 	protected List<ObjectTrace> defaultDataset() throws Exception {
-		List<ObjectTrace> defaultDataSet = new DatasetReader().readObjects(getDatasetFileName());
+		List<ObjectTrace> defaultDataSet = new DatasetReader().readObjects(datasetFileName);
 		setEvaluationDataSet(defaultDataSet);
 		return defaultDataSet;
 	}
