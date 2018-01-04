@@ -27,9 +27,9 @@ public class EcoopEngine implements IMissingCallEngine {
 
 		for (ObjectTrace o2 : dataset) {
 			if (dm.equals(query, o2))
-				query.nequals++;
+				query.incEqualCount();
 			if (dm.almostEquals(query, o2)) {
-				query.nalmostequals++;
+				query.incAlmostEqualCount();
 			}
 		}
 

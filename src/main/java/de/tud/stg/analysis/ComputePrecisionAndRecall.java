@@ -73,6 +73,8 @@ public abstract class ComputePrecisionAndRecall {
 		// everytinh is float in order not to ennoyed by euclidean division
 		double nperfect = 0;
 		double ntoomuch = 0;
+		
+		// Number of specialcases without any almost equal or equal TUs (shouldn't exist?)
 		double nspecialcase = 0;
 		double nkilled = 0;
 		double nfalse = 0;
@@ -115,12 +117,12 @@ public abstract class ComputePrecisionAndRecall {
 
 				// there is no equals and no almost equals
 				// we really can not say anything
-				if (degradedRecord.nequals == 0 && degradedRecord.nalmostequals == 0) {
+				if (degradedRecord.isSpecial()) {
 					nspecialcase++;
 				}
 
 				nanalyzed++;
-				output.write(strangeness + " " + degradedRecord.nequals + " " + degradedRecord.nalmostequals + "\n");
+				output.write(strangeness + " " + degradedRecord.getCounts() + "\n");
 
 				if (strangeness > 0.8) {
 					nkilled++;
