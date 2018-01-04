@@ -1,6 +1,9 @@
 # output files created by typeusage.miner
 output
 
+# dataset files for analysis
+datasets
+
 # Created by https://www.gitignore.io/api/eclipse,maven,intellij
 
 ### Eclipse ###
