@@ -20,6 +20,11 @@ public class ObjectTrace extends TypeUsage {
 	public int nalmostequals;
 	public static final double conservative_coef = 2;
 
+	public ObjectTrace(String location, String context, String type) {
+		super(location, context, type);
+		// TODO Auto-generated constructor stub
+	}
+
 	public void reset() {
 		nequals = 0;
 		nalmostequals = 0;

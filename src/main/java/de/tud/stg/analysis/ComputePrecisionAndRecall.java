@@ -15,7 +15,7 @@ import de.tud.stg.analysis.engine.IMissingCallEngine;
  */
 public abstract class ComputePrecisionAndRecall {
 
-	protected DistanceModule dm = new DistanceModule();
+	protected DistanceModule dm;
 
 	private List<ObjectTrace> l;
 
@@ -31,9 +31,11 @@ public abstract class ComputePrecisionAndRecall {
 
 	protected String datasetFileName;
 
+	/** Constructor */
 	public ComputePrecisionAndRecall(String datasetFileName) {
 		super();
 		this.datasetFileName = datasetFileName;
+		dm = new DistanceModule();
 	}
 
 	public List<ObjectTrace> getEvaluationDataSet() {
@@ -78,7 +80,6 @@ public abstract class ComputePrecisionAndRecall {
 		double strangeness_score2 = 0;
 		double strangeness_score3 = 0;
 		double strangeness_score4 = 0;
-		Random random = new Random();
 		List<String> overview = new ArrayList<String>();
 
 		IMissingCallEngine engine = getEngine();

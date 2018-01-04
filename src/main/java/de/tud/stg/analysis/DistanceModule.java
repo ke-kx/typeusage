@@ -108,19 +108,6 @@ public final class DistanceModule {
 		return missing.size() > 0 && missing.size() <= getOption_k();
 	}
 
-	public DegradedObjectTrace clone(ObjectTrace model) {
-		DegradedObjectTrace clone = new DegradedObjectTrace();
-		clone.original = model;
-		cloneInternal(model, clone);
-		return clone;
-	}
-
-	private void cloneInternal(ObjectTrace model, TypeUsage clone) {
-		clone.setContext(model.getContext());
-		clone.setType(model.getType());
-		clone.calls.addAll(model.calls);
-	}
-
 	public boolean weakEquals(ObjectTrace this_, ObjectTrace ob) {
 		if (!contextIsValid(this_, ob))
 			return false;

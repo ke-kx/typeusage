@@ -60,8 +60,7 @@ public class AnalysisDegraded extends ComputePrecisionAndRecall {
 			{
 				// then we degrade the object
 				// and recompute the values
-				DegradedObjectTrace degradedRecord = dm.clone(o1);
-				degradedRecord.remove(removedId);
+				DegradedObjectTrace degradedRecord = new DegradedObjectTrace(o1, removedId);
 				output.add(degradedRecord);
 				// System.out.println("generated "+output.size());
 			}
