@@ -99,8 +99,6 @@ public class DMMCRunner extends MuBenchRunner {
 		List<ObjectTrace> dataset = new DatasetReader().readObjects(modelFilename);
 		EcoopEngine engine = new EcoopEngine(dataset);
 		engine.option_filterIsEnabled = filterMissingMethodsWithSmallSupport;
-		engine.dontConsiderContext();
-		engine.setOption_k(maxNumberOfMissingCalls);
 
 		int nanalyzed = 0;
 
@@ -158,7 +156,7 @@ public class DMMCRunner extends MuBenchRunner {
 	}
 
 	private static List<String> getMissingCalls(ObjectTrace target) {
-		return target.missingcalls.keySet().stream().map(missingcall -> missingcall.split(":")[1])
+		return target.missingCallStatistics.keySet().stream().map(missingcall -> missingcall.split(":")[1])
 				.collect(Collectors.toCollection(LinkedList::new));
 	}
 

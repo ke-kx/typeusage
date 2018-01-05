@@ -5,31 +5,34 @@ import java.util.HashMap;
 import java.util.List;
 
 import de.tud.stg.analysis.DegradedObjectTrace;
-import de.tud.stg.analysis.DistanceModule;
 import de.tud.stg.analysis.ObjectTrace;
 
 public class EcoopEngine implements IMissingCallEngine {
 
-	private DistanceModule dm = new DistanceModule();
 	List<ObjectTrace> dataset;
 
 	public boolean option_filterIsEnabled = true;
 	public double option_filter_threshold = 0.9;
 
 	public EcoopEngine(List<ObjectTrace> l) {
+		//TODO is this a deep or shallow copy?
 		dataset = new ArrayList<ObjectTrace>(l);
 	}
 
 	@Override
 	public HashMap<String, Integer> query(ObjectTrace query) {
 		// reset
+		//TODO doesnt missingcalls also have to be reseted?
 		query.reset();
 
 		for (ObjectTrace o2 : dataset) {
-			if (dm.equals(query, o2))
+			if (query.isEqual(o2))
 				query.incEqualCount();
-			if (dm.almostEquals(query, o2)) {
+			if (query.isAlmostEqual(o2)) {
 				query.incAlmostEqualCount();
+				for (String missingCall : query.getMissingCalls(o2)) {
+					query.incMissingCallCount(missingCall);
+				}
 			}
 		}
 
@@ -59,18 +62,18 @@ public class EcoopEngine implements IMissingCallEngine {
 		// if (true){
 		if (option_filterIsEnabled) {
 			List<String> callsToBeFiltered = new ArrayList<String>();
-			int nmissing = query.missingcalls.size();
-			for (String cs : query.missingcalls.keySet()) {
-				if ((query.missingcalls.get(cs) * 1.0) / nmissing < option_filter_threshold) {
+			int nmissing = query.missingCallStatistics.size();
+			for (String cs : query.missingCallStatistics.keySet()) {
+				if ((query.missingCallStatistics.get(cs) * 1.0) / nmissing < option_filter_threshold) {
 					callsToBeFiltered.add(cs);
 				}
 			}
 			for (String cs : callsToBeFiltered) {
-				query.missingcalls.remove(cs);
+				query.missingCallStatistics.remove(cs);
 			}
 		}
 
-		return query.missingcalls;
+		return query.missingCallStatistics;
 	}
 
 	@Override
@@ -86,33 +89,4 @@ public class EcoopEngine implements IMissingCallEngine {
 		}
 		return result;
 	}
-
-	@Override
-	public List<String> getParameters() {
-		List<String> l = dm.getParameters();
-		l.add("option_nofilter = " + option_filterIsEnabled);
-		l.add("option_filter_threshold = " + option_filter_threshold);
-		return l;
-	}
-
-	public void setOption_nocontext(boolean option_nocontext) {
-		throw new RuntimeException();
-	}
-
-	public void setOption_notype(boolean option_notype) {
-		throw new RuntimeException();
-	}
-
-	public void setOption_k(int option_k) {
-		dm.setOption_k(option_k);
-	}
-
-	public void dontConsiderType() {
-		dm.setOption_notype(true);
-	}
-
-	public void dontConsiderContext() {
-		dm.setOption_nocontext(true);
-	}
-
 }

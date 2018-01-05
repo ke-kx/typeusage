@@ -15,8 +15,6 @@ import de.tud.stg.analysis.engine.IMissingCallEngine;
  */
 public abstract class ComputePrecisionAndRecall {
 
-	protected DistanceModule dm;
-
 	private List<ObjectTrace> l;
 
 	// default engine
@@ -37,7 +35,6 @@ public abstract class ComputePrecisionAndRecall {
 	public ComputePrecisionAndRecall(String datasetFileName) {
 		super();
 		this.datasetFileName = datasetFileName;
-		dm = new DistanceModule();
 	}
 
 	public List<ObjectTrace> getEvaluationDataSet() {
@@ -131,24 +128,24 @@ public abstract class ComputePrecisionAndRecall {
 				// degradedRecord.missingcalls.clear();
 				// }
 
-				if (degradedRecord.missingcalls.size() > 0) {
+				if (degradedRecord.missingCallStatistics.size() > 0) {
 					nanswered++;
 				} else {
 					// System.out.println("I am in ");
 				}
 
-				if (degradedRecord.missingcalls.keySet().contains(degradedRecord.removedMethodCall)) {
+				if (degradedRecord.missingCallStatistics.keySet().contains(degradedRecord.removedMethodCall)) {
 
 					// System.out.println(degradedRecord.missingcalls.keySet().size());
-					precision_score += 1.0 / (degradedRecord.missingcalls.keySet().size());
+					precision_score += 1.0 / (degradedRecord.missingCallStatistics.keySet().size());
 					recall_score += 1;
 
-					if (degradedRecord.missingcalls.keySet().size() == 1) {
+					if (degradedRecord.missingCallStatistics.keySet().size() == 1) {
 						nperfect++;
 					} else {
 						ntoomuch++;
 					}
-				} else if (degradedRecord.missingcalls.keySet().size() > 0) {
+				} else if (degradedRecord.missingCallStatistics.keySet().size() > 0) {
 					// answered but false
 					// we increase neither the precision nor the recall
 					nfalse++;
@@ -204,7 +201,6 @@ public abstract class ComputePrecisionAndRecall {
 
 		List<String> result = new ArrayList<String>();
 		result.add("dataset(" + datasetFileName + ")");
-		result.addAll(getEngine().getParameters());
 		return StringUtils.join(result, " ");
 	}
 
@@ -230,25 +226,4 @@ public abstract class ComputePrecisionAndRecall {
 	protected void disableFiltering() throws Exception {
 		((EcoopEngine) getEngine()).option_filterIsEnabled = false;
 	}
-
-	public void setOption_k(int option_k) throws Exception {
-		((EcoopEngine) getEngine()).setOption_k(option_k);
-	}
-
-	public void setOption_nocontext(boolean option_nocontext) {
-		throw new RuntimeException();
-	}
-
-	public void setOption_notype(boolean option_notype) {
-		throw new RuntimeException();
-	}
-
-	public void setEcoopDontConsiderType() throws Exception {
-		((EcoopEngine) getEngine()).dontConsiderType();
-	}
-
-	public void disableContext() throws Exception {
-		((EcoopEngine) getEngine()).dontConsiderContext();
-	}
-
 }

@@ -21,7 +21,8 @@ public class ObjectTrace extends TypeUsage {
 	/** Number of ALMOST EQUAL Traces */
 	private int almostEqualCount;
 
-	public HashMap<String, Integer> missingcalls = new HashMap<String, Integer>();
+	/** Set of missing calls and how often each was found to be missing */
+	public HashMap<String, Integer> missingCallStatistics = new HashMap<String, Integer>();
 
 	/** Coefficient to use for default strangeness2 */
 	private static final double conservative_coef = 2;
@@ -33,6 +34,11 @@ public class ObjectTrace extends TypeUsage {
 	public ObjectTrace(String location, String context, String type) {
 		super(location, context, type);
 		reset();
+	}
+	
+	public void incMissingCallCount(String call) {
+		int current = missingCallStatistics.getOrDefault(call, 0);
+		missingCallStatistics.put(call, current + 1);
 	}
 	
 	public void incEqualCount() {
@@ -85,7 +91,7 @@ public class ObjectTrace extends TypeUsage {
 		ret += "\tcontext: " + getContext() + "\n";
 		ret += "\ttype: " + getType() + "\n";
 		ret += "\t\tpresent" + calls + "\n";
-		ret += "\t\tmissing" + missingcalls + "\n";
+		ret += "\t\tmissing" + missingCallStatistics + "\n";
 		return ret;
 	}
 }

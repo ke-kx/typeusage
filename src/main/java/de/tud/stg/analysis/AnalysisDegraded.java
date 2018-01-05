@@ -27,7 +27,7 @@ public class AnalysisDegraded extends ComputePrecisionAndRecall {
 			for (ObjectTrace o2 : input) {
 				// we need to have at least on redundancy
 				// and is better from a methodocological viewpoint
-				if (o1 != o2 && dm.weakEquals(o1, o2)) {
+				if (o1 != o2 && o1.isWeaklyEqual(o2)) {
 					unique = false;
 					break;
 				}

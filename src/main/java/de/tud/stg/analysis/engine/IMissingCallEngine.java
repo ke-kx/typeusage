@@ -12,6 +12,4 @@ public interface IMissingCallEngine {
 
 	/** returns a list of method calls */
 	HashMap<String, Integer> simulateQuery(DegradedObjectTrace degraded);
-
-	List<String> getParameters();
 }
