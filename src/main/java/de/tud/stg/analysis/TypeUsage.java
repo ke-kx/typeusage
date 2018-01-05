@@ -76,6 +76,7 @@ public abstract class TypeUsage {
 		return missing;
 	}
 	
+	/** Only check if context and type are equal (and only if the relevant flags are set) */
 	public boolean isWeaklyEqual(TypeUsage other) {
 		if (USE_CONTEXT && !context.equals(other.context)) 
 			return false;
@@ -102,7 +103,7 @@ public abstract class TypeUsage {
 	public boolean isAlmostEqual(TypeUsage other) {
 		if (!isWeaklyEqual(other))
 			return false;
-		return isAlmostEqualCode(other);
+		return isAlmostEqualPaper(other);
 	}
 	
 	/**
