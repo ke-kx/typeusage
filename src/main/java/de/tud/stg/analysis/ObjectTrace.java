@@ -82,11 +82,11 @@ public class ObjectTrace extends TypeUsage {
 	//TODO does this make sense? probably not
 	@Override
 	public String toString() {
-		String ret = "\n\n\n -------------------- \n";
+		String ret = "-------------------- \n";
 		ret += "Strange: " + strangeness() + "\n";
 		ret += "Strangev2: " + strangeness2() + "\n";
 		ret += "Equals: " + equalCount + "\n";
-		ret += "Almost: " + almostEqualCount + "\n";
+		ret += "AlmostEquals: " + almostEqualCount + "\n";
 		ret += "\tlocation: " + getLocation() + "\n";
 		ret += "\tcontext: " + getContext() + "\n";
 		ret += "\ttype: " + getType() + "\n";
