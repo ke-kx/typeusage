@@ -3,15 +3,8 @@ package de.tud.stg.analysis;
 import java.util.*;
 
 /**
- * //Note that since the relationship holds for the identity, i.e. xEx is
- * always- //valid, E(x) always contains x itself, and |E(x)| 1.
- * 
- * // well, this reuce the average S-score significantly // we remove the 1
- * again
- * 
- * 
- * @author martin
- *
+ * Extension on TypeUsages which contains all relevant information to calculate the strangeness score and
+ * display the correct missing method call afterwards.
  */
 public class ObjectTrace extends TypeUsage {
 	

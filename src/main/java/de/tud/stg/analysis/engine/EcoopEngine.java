@@ -70,6 +70,7 @@ public class EcoopEngine implements IMissingCallEngine {
 			}
 		}
 
+		//TODO what is the point of this exactly?
 		// possible filter on the missing calls with a second threshold
 		if (option_filterIsEnabled) {
 			List<String> callsToBeFiltered = new ArrayList<String>();
