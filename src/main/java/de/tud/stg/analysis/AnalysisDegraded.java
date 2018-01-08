@@ -10,6 +10,11 @@ public class AnalysisDegraded extends ComputePrecisionAndRecall {
 
 	private static final int OUTPUT_STEP_SIZE = 1000;
 
+	public static void main(String[] args) throws Exception {
+		ComputePrecisionAndRecall analysis = new AnalysisDegraded("datasets/eclipse-soot-swt-v5.dat");
+		System.out.println(analysis.run());
+	}
+
 	public AnalysisDegraded(String datasetFileName) {
 		super(datasetFileName);
 	}

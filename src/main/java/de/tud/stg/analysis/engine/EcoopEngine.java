@@ -70,30 +70,7 @@ public class EcoopEngine implements IMissingCallEngine {
 			}
 		}
 
-		// in this case, there could not be almost equals almost by construction
-		// which mechanically degrades the results
-		// so we discard them
-
-		// however, this does give a better overview of the results thanks to
-		// the if (o2.equals(o1)) continue; above
-		// mechanically improve
-		// * the precision (.84-> .86)
-		// * and especially the answered/recall .78 -> 1
-		// so it's better to actually consider the precision
-		// beacause we don't consider hard cases
-		// or in other terms it removes all queries that could not be answered directly
-		// if (option_norarecase == true && probe==0) {
-		// nspecialcase++;
-		// continue;
-		// }
-
-		/*
-		 * if (nalmostequals2 == 0) {
-		 * System.out.println(nequals2+" "+nalmostequals2+" "+probe+" "+degradedRecord);
-		 * }
-		 */
 		// possible filter on the missing calls with a second threshold
-		// if (true){
 		if (option_filterIsEnabled) {
 			List<String> callsToBeFiltered = new ArrayList<String>();
 			int nmissing = query.missingCallStatistics.size();
