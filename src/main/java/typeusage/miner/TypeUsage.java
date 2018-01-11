@@ -34,7 +34,9 @@ public class TypeUsage {
     /** String form of methodCalls belonging to this TU */
     protected final Set<String> methodCalls = new HashSet<String>();
 
-    private Set<String> _extends = new HashSet<String>();
+    // TODO exclude the current type of this TU!
+    /** The type hierarchy of the type  */
+    private List<String> _extends = new ArrayList<>();
 
     protected TypeUsage() {
     }
@@ -65,10 +67,18 @@ public class TypeUsage {
         setExtends(type);
     }
 
-    /**
-     * recursive method to get the complete type hierarchy type
-     */
+    /** Start going up the type hierarchy */
     private void setExtends(Type type) {
+        if (type instanceof RefType) {
+            SootClass sc = ((RefType) type).getSootClass();
+            if (sc.hasSuperclass()) {
+                setExtendsRecursive(sc.getSuperclass().getType());
+            }
+        }
+    }
+
+    /** recursive method to get the complete type hierarchy type */
+    private void setExtendsRecursive(Type type) {
         if (type instanceof RefType) {
             SootClass sc = ((RefType) type).getSootClass();
             // adding the current type:
@@ -104,8 +114,6 @@ public class TypeUsage {
         return result;
     }
 
-    ;
-
     @Override
     public boolean equals(Object obj) {
         if (!(obj instanceof TypeUsage))
@@ -113,8 +121,6 @@ public class TypeUsage {
         TypeUsage other = (TypeUsage) obj;
         return other.type.equals(this.type) && other.methodCalls.equals(this.methodCalls);
     }
-
-    ;
 
     @Override
     public String toString() {

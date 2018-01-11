@@ -13,7 +13,7 @@ public class DatabaseTypeUsageCollector extends TypeUsageCollector {
     public DatabaseTypeUsageCollector(String databaseLocation) {
         try {
             databaseConnection = DriverManager.getConnection("jdbc:hsqldb:file:" + databaseLocation, "SA", "");
-            statement = databaseConnection.prepareStatement("");
+            //statement = databaseConnection.prepareStatement("");
         } catch (SQLException e) {
             e.printStackTrace();
         }
@@ -34,11 +34,13 @@ public class DatabaseTypeUsageCollector extends TypeUsageCollector {
     public void receive(TypeUsage t) {
         System.out.println(t);
 
+        /*
         try {
             statement.setBoolean(0, true);
             statement.execute();
         } catch (SQLException e) {
             e.printStackTrace();
         }
+        */
     }
 }
