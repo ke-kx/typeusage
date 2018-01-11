@@ -40,7 +40,6 @@ public abstract class TypeUsageCollector implements IMethodCallCollector {
     }
 
     /** Register Transform, set options and start analysis */
-    @Override
     public TypeUsageCollector run() {
 
         PackManager.v().getPack("jtp").add(new Transform("jtp.myTransform", new TUBodyTransformer(this)));

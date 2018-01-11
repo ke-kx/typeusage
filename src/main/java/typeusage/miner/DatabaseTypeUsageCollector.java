@@ -8,9 +8,9 @@ public class DatabaseTypeUsageCollector extends TypeUsageCollector {
 
     private Connection databaseConnection;
 
-    public DatabaseTypeUsageCollector() {
+    public DatabaseTypeUsageCollector(String databaseLocation) {
         try {
-            databaseConnection = DriverManager.getConnection("jdbc:hsqldb:file:output/testdb", "SA", "");
+            databaseConnection = DriverManager.getConnection("jdbc:hsqldb:file:" + databaseLocation, "SA", "");
         } catch (SQLException e) {
             e.printStackTrace();
         }

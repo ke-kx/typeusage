@@ -15,8 +15,6 @@ public class FileTypeUsageCollector extends TypeUsageCollector {
         output = new BufferedWriter(new FileWriter(file));
     }
 
-    final public List<TypeUsage> data = new ArrayList<TypeUsage>();
-
     @Override
     public FileTypeUsageCollector run() {
         super.run();

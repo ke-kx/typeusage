@@ -8,9 +8,12 @@ public class Main {
 
     public static void main(String[] args) throws Exception {
         TypeUsageCollector c = new FileTypeUsageCollector("output/output.dat");
+        c = new DatabaseTypeUsageCollector("output/test");
+
         String toBeAnalyzed = "/home/tesuji/jabref/bin";
         toBeAnalyzed = "/home/tesuji/secure/teamscale/netbeans/build";
         toBeAnalyzed = null;
+
         if (args.length > 0) {
             toBeAnalyzed = args[0];
             if (args.length > 1) {

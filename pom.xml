@@ -36,6 +36,13 @@
             <artifactId>mubench.cli</artifactId>
             <version>0.0.9-SNAPSHOT</version>
         </dependency>
+
+        <dependency>
+            <groupId>org.hsqldb</groupId>
+            <artifactId>hsqldb</artifactId>
+            <version>2.4.0</version>
+        </dependency>
+
     </dependencies>
 
     <build>

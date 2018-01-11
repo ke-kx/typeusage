@@ -86,11 +86,7 @@ public class DMMCRunner extends MuBenchRunner {
     private static void run(DetectorOutput output, String modelFilename, FileTypeUsageCollector usageCollector,
                             double minStrangeness, int maxNumberOfMissingCalls, Predicate<ObjectTrace> targetUsage,
                             boolean filterMissingMethodsWithSmallSupport) throws Exception {
-        try {
-            usageCollector.run();
-        } finally {
-            usageCollector.close();
-        }
+        usageCollector.run();
 
         detect(modelFilename, output, minStrangeness, maxNumberOfMissingCalls, targetUsage,
                 filterMissingMethodsWithSmallSupport);
