@@ -4,6 +4,9 @@ import soot.SootMethod;
 
 /** defines an object that can can discuss with TUBodyTransformer */
 public interface IMethodCallCollector {
+    /** Run the analysis */
+    IMethodCallCollector run();
+
 	/** Receive a type usage, that is save it in the way which is decided by the implementing object */
 	void receive(TypeUsage t);
 
@@ -16,9 +19,7 @@ public interface IMethodCallCollector {
 	/** Change the context signature to the required format */
 	String translateContextSignature(SootMethod meth);
 
-	/**
-	 * Keep a type-usage if it's class' fully-qualified name starts with this prefix
-	 */
+	/** Keep a type-usage if it's class' fully-qualified name starts with this prefix */
 	String getPrefixToKeep();
 
 	/** Poor man's applicative debug */

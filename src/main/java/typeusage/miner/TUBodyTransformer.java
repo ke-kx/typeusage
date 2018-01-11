@@ -29,7 +29,7 @@ public class TUBodyTransformer extends BodyTransformer {
 	private LocalMustAliasAnalysis aliasInfo;
 
 	/** Used to determine if two locals point to the same instance field */ 
-	private InstanceFieldDetector instanceFieldDetector;
+	private volatile InstanceFieldDetector instanceFieldDetector;
 
 	/** Constructor */
 	public TUBodyTransformer(IMethodCallCollector m) {

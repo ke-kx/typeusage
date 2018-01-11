@@ -8,7 +8,7 @@ import java.util.List;
 
 public class FileTypeUsageCollector extends TypeUsageCollector {
 
-	BufferedWriter output;
+	private BufferedWriter output;
 
 	public FileTypeUsageCollector(String file) throws Exception {
 		super();
@@ -16,6 +16,13 @@ public class FileTypeUsageCollector extends TypeUsageCollector {
 	}
 
 	final public List<TypeUsage> data = new ArrayList<TypeUsage>();
+
+	@Override
+    public FileTypeUsageCollector run() {
+		super.run();
+		close();
+		return this;
+	}
 
 	@Override
 	public void receive(TypeUsage t) {
@@ -26,7 +33,7 @@ public class FileTypeUsageCollector extends TypeUsageCollector {
 		}
 	}
 
-	public void close() {
+	private void close() {
 		try {
 			output.close();
 		} catch (IOException e) {

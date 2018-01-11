@@ -1,12 +1,15 @@
 package typeusage.miner;
 
 import java.io.File;
+
 import java.util.ArrayList;
 import java.util.List;
 
 import org.apache.commons.lang.StringUtils;
 
 import soot.PackManager;
+import soot.Scene;
+import soot.SootClass;
 import soot.SootMethod;
 import soot.Transform;
 import soot.Type;
@@ -21,7 +24,7 @@ import soot.options.Options;
  * @author Martin Monperrus
  * 
  */
-public class TypeUsageCollector implements IMethodCallCollector {
+public abstract class TypeUsageCollector implements IMethodCallCollector {
 
 	/**
 	 * Keep a type-usage if it's class' fully-qualified name starts with this prefix
@@ -35,14 +38,19 @@ public class TypeUsageCollector implements IMethodCallCollector {
 	final List<String> classpaths = new ArrayList<String>();
 
 	/** Constructor */
-	public TypeUsageCollector() throws Exception {
+	public TypeUsageCollector() {
 		// TODO blogpost claims this option is not actually recommended?
 		// http://www.bodden.de/2008/08/21/soot-command-line/
 		Options.v().set_allow_phantom_refs(true);
+		
+		//TODO: do i actually want to analyse the src or the classfiles?
+		//Options.v().set_src_prec(Options.src_prec_c);
+		Scene.v().addBasicClass("java.lang.invoke.LambdaMetafactory", SootClass.SIGNATURES);
 	}
 
 	/** Register Transform, set options and start analysis */
-	public TypeUsageCollector run() throws Exception {
+	@Override
+	public TypeUsageCollector run() {
 
 		PackManager.v().getPack("jtp").add(new Transform("jtp.myTransform", new TUBodyTransformer(this)));
 
@@ -63,11 +71,6 @@ public class TypeUsageCollector implements IMethodCallCollector {
 	}
 
 	@Override
-	public void receive(TypeUsage t) {
-		System.out.println(t);
-	}
-
-	@Override
 	public String translateCallSignature(SootMethod meth) {
 		// can also be meth.getSignature
 		return meth.getName() + "()";
@@ -75,7 +78,6 @@ public class TypeUsageCollector implements IMethodCallCollector {
 	}
 	
 	//TODO replace with string.format ...
-	@SuppressWarnings("unchecked")
 	@Override
 	public String translateContextSignature(SootMethod meth) {
 		StringBuilder sb = new StringBuilder();
