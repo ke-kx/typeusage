@@ -9,6 +9,7 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * is an abstraction over Soot locals: Variable: 1 ----- 1..n Local
@@ -34,7 +35,6 @@ public class TypeUsage {
     /** String form of methodCalls belonging to this TU */
     protected final Set<String> methodCalls = new HashSet<String>();
 
-    // TODO exclude the current type of this TU!
     /** The type hierarchy of the type  */
     private List<String> _extends = new ArrayList<>();
 
@@ -89,6 +89,15 @@ public class TypeUsage {
                 setExtends(sc.getSuperclass().getType());
             }
         }
+    }
+
+    /** Get list of all types that the original type extends, as well as the original type */
+    public List<String> getTypeHierarchy() {
+        List<String> ret = _extends.stream()
+                                    .map(s -> s.replace("extend:", ""))
+                                    .collect(Collectors.toList());
+        ret.add(0, type);
+        return ret;
     }
 
     //TODO only do string work in for string method o.O - or easier like this?
