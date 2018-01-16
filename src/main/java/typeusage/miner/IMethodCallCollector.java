@@ -19,5 +19,5 @@ public interface IMethodCallCollector {
     String getPrefixToKeep();
 
     /** Poor man's applicative debug */
-    void debug(String msg);
+    void debug(String format, Object... args);
 }

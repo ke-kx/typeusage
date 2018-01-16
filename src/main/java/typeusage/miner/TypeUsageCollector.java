@@ -90,7 +90,7 @@ public abstract class TypeUsageCollector implements IMethodCallCollector {
     }
 
     @Override
-    public void debug(String msg) {
+    public void debug(String format, Object... args) {
         // subclasses may override
     }
 

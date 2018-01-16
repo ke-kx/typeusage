@@ -6,10 +6,10 @@ import java.util.List;
 
 public class DatabaseTypeUsageCollector extends TypeUsageCollector {
 
-    private Connection databaseConnection;
-    private PreparedStatement checkTypesStatement;
-    private PreparedStatement getTypeStatement;
-    private PreparedStatement addTypeStatement;
+    private final Connection databaseConnection;
+    private final PreparedStatement checkTypesStatement;
+    private final PreparedStatement getTypeStatement;
+    private final PreparedStatement addTypeStatement;
 
     public DatabaseTypeUsageCollector(String databaseLocation) {
         try {
@@ -19,6 +19,8 @@ public class DatabaseTypeUsageCollector extends TypeUsageCollector {
             addTypeStatement = databaseConnection.prepareStatement("INSERT INTO \"type\" (\"typeId\", \"parentId\", \"name\") VALUES(DEFAULT, ?, ?)");
         } catch (SQLException e) {
             e.printStackTrace();
+            // rethrow to enable setting final variables in try-catch block
+            throw new RuntimeException(e);
         }
     }
 
@@ -52,37 +54,55 @@ public class DatabaseTypeUsageCollector extends TypeUsageCollector {
         }
     }
 
-    // TODO check if type saftety is better or creating new statements for each thing
-    /** Check if all types along the hierarchy of this typeusage are already in the DB and add them if not */
-    private synchronized void addTypeHierarchy(TypeUsage t) throws SQLException {
-        List<String> typeHierarchy = t.getTypeHierarchy();
-        System.out.println(typeHierarchy);
-        Array array = databaseConnection.createArrayOf("VARCHAR", typeHierarchy.toArray());
-        checkTypesStatement.setArray(1, array);
-        ResultSet typeCount = checkTypesStatement.executeQuery();
+    @Override
+    public void debug(String format, Object... args) {
+        System.out.printf(format, args);
+    }
 
-        // all types are already in the database
+    /** Check if all types along the hierarchy of this typeusage are already in the DB and add them if not */
+    private void addTypeHierarchy(TypeUsage t) throws SQLException {
+        List<String> typeHierarchy = t.getTypeHierarchy();
+        Collections.reverse(typeHierarchy);
+        debug("Adding TypeHierarchy to db: %s\n", typeHierarchy);
+
+        ResultSet typeCount;
+        synchronized (checkTypesStatement) {
+            checkTypesStatement.clearParameters();
+            Array array = databaseConnection.createArrayOf("VARCHAR", typeHierarchy.toArray());
+            checkTypesStatement.setArray(1, array);
+            typeCount = checkTypesStatement.executeQuery();
+        }
+
+        // all types are already in the database, no need to continue
         if (typeCount.next() && typeCount.getInt(1) == typeHierarchy.size()) return;
 
+        // check all types starting from the topmost parent and add them if necessary
         Integer parentId = null;
         ResultSet currentType;
-        // check all types starting from the parent and add them if necessary
-        Collections.reverse(typeHierarchy);
         for (String type : typeHierarchy) {
-            getTypeStatement.setString(1, type);
-            currentType = getTypeStatement.executeQuery();
+            synchronized (getTypeStatement) {
+                getTypeStatement.clearParameters();
+                getTypeStatement.setString(1, type);
+                currentType = getTypeStatement.executeQuery();
+            }
 
             if (!currentType.next()) {
-                if (parentId != null) {
-                    addTypeStatement.setInt(1, parentId);
-                } else {
-                    addTypeStatement.setNull(1, Types.INTEGER);
+                synchronized (addTypeStatement) {
+                    if (parentId != null) {
+                        addTypeStatement.setInt(1, parentId);
+                    } else {
+                        addTypeStatement.setNull(1, Types.INTEGER);
+                    }
+                    addTypeStatement.setString(2, type);
+                    addTypeStatement.execute();
                 }
-                addTypeStatement.setString(2, type);
-                addTypeStatement.execute();
 
-                // execute again to get current ID
-                currentType = getTypeStatement.executeQuery();
+                // get current ID, set parameter again since we don't now if another thread used this statement in the meantime
+                synchronized (getTypeStatement) {
+                    getTypeStatement.clearParameters();
+                    getTypeStatement.setString(1, type);
+                    currentType = getTypeStatement.executeQuery();
+                }
                 currentType.next();
             }
             // set parentId for next iteration
