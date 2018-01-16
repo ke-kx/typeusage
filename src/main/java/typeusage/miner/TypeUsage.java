@@ -94,10 +94,17 @@ public class TypeUsage {
     /** Get list of all types that the original type extends, as well as the original type */
     public List<String> getTypeHierarchy() {
         List<String> ret = _extends.stream()
-                                    .map(s -> s.replace("extend:", ""))
-                                    .collect(Collectors.toList());
+                .map(s -> s.replace("extend:", ""))
+                .collect(Collectors.toList());
         ret.add(0, type);
         return ret;
+    }
+
+    /** Get set of all method calls applied in this TU */
+    public Set<String> getMethodCalls() {
+        return methodCalls.stream()
+                .map(s -> s.replace("call:", ""))
+                .collect(Collectors.toSet());
     }
 
     //TODO only do string work in for string method o.O - or easier like this?
