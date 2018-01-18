@@ -19,6 +19,9 @@ public class TypeUsage {
     /** Class in which the TypeUsage occurs */
     private String location = "!";
 
+    /** Line nr where the TypeUsage occurs if available */
+    private Integer lineNr = null;
+
     /** Type of the used object in string form */
     protected String type = "!";
 
@@ -48,11 +51,11 @@ public class TypeUsage {
         location = body.getMethod().getDeclaringClass().toString();
         SourceLnPosTag sourceLnTag = (SourceLnPosTag) call.getStmt().getTag("SourceLnPosTag");
         if (sourceLnTag != null) {
-            location += ":" + sourceLnTag.startLn();
+            lineNr = sourceLnTag.startLn();
         }
         LineNumberTag lineNumberTag = (LineNumberTag) call.getStmt().getTag("LineNumberTag");
         if (lineNumberTag != null) {
-            location += ":" + lineNumberTag.getLineNumber();
+            lineNr = lineNumberTag.getLineNumber();
         }
 
         addMethodCall(call, collector);
@@ -117,6 +120,14 @@ public class TypeUsage {
         return location;
     }
 
+    public Integer getLineNr() {
+        return lineNr;
+    }
+
+    public String getContext() {
+        return methodContext;
+    }
+
     public List<MethodCall> getUnderlyingLocals() {
         return underlyingLocals;
     }
@@ -140,7 +151,7 @@ public class TypeUsage {
 
     @Override
     public String toString() {
-        return String.format("location:%s context:%s type:%s %s %s",
-                location, methodContext, type, StringUtils.join(methodCalls, " "), StringUtils.join(_extends, " "));
+        return String.format("location:%s:%d context:%s type:%s %s %s",
+                location, lineNr, methodContext, type, StringUtils.join(methodCalls, " "), StringUtils.join(_extends, " "));
     }
 }

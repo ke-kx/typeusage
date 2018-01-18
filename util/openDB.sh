@@ -1,0 +1,2 @@
+#!/bin/bash
+java -cp /home/tesuji/Dropbox/Uni/MA/workspace/typeusage/util/hsqldb-2.4.0/lib/hsqldb.jar org.hsqldb.util.DatabaseManagerSwing --driver org.hsqldb.jdbcDriver --url jdbc:hsqldb:file:/home/tesuji/Dropbox/Uni/MA/workspace/typeusage/output/test --user SA

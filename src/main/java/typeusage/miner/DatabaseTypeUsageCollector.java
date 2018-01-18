@@ -9,24 +9,38 @@ public class DatabaseTypeUsageCollector extends TypeUsageCollector {
 
     private final Connection databaseConnection;
 
-    // statements for type hierarchy
+    /** Get count of types where name is in parameter array (1 = Array of typename)*/
     private final PreparedStatement checkTypesStatement;
+
+    /** Get typeId of one type specified by its name (1 = Name) */
     private final PreparedStatement getTypeStatement;
+
+    /** Add a type if it doesn't exist yet (1 = Name, 2 = ParentName) */
     private final PreparedStatement addTypeStatement;
 
-    // statements for methods
+    /** Insert method if there is none of the same name for the current ype (1 = methodName, 2 = typeId, 3 = typeId) */
     private final PreparedStatement addMethodStatement;
+
+    /** Insert type usage (1 = typeName, 2 = class, 3 = lineNr, 4 = context) */
+    private final PreparedStatement addTypeUsageStatement;
 
     public DatabaseTypeUsageCollector(String databaseLocation) {
         try {
             databaseConnection = DriverManager.getConnection("jdbc:hsqldb:file:" + databaseLocation, "SA", "");
             checkTypesStatement = databaseConnection.prepareStatement("SELECT COUNT(*) FROM type WHERE typeName IN( UNNEST(?) )");
             getTypeStatement = databaseConnection.prepareStatement("SELECT typeId FROM type WHERE typeName = ?");
-            addTypeStatement = databaseConnection.prepareStatement("INSERT INTO type (typeId, parentId, typeName) VALUES(DEFAULT, ?, ?)");
+
+            addTypeStatement = databaseConnection.prepareStatement(
+                    "MERGE INTO type USING (VALUES( ? )) AS vals(typeName) " +
+                        "ON type.typeName = vals.typeName " +
+                        "WHEN NOT MATCHED THEN INSERT VALUES (DEFAULT, (SELECT typeId FROM type WHERE typeName = ?), vals.typeName)"
+            );
             addMethodStatement = databaseConnection.prepareStatement(
                 "MERGE INTO method USING (VALUES( ? )) AS vals(methodName) " +
-                    "ON method.typeId = ? AND method.methodName = vals.methodName " +
-                    "WHEN NOT MATCHED THEN INSERT VALUES (DEFAULT, ?, vals.methodName)");
+                        "ON method.typeId = ? AND method.methodName = vals.methodName " +
+                        "WHEN NOT MATCHED THEN INSERT VALUES (DEFAULT, ?, vals.methodName)");
+            addTypeUsageStatement = databaseConnection.prepareStatement("INSERT INTO typeusage(typeusageId, typeId, class, lineNr, context) " +
+                    " VALUES( DEFAULT, (SELECT typeId FROM type WHERE typeName = ?), ?, ?, ? )");
         } catch (SQLException e) {
             e.printStackTrace();
             // rethrow to enable setting final variables in try-catch block
@@ -51,10 +65,8 @@ public class DatabaseTypeUsageCollector extends TypeUsageCollector {
 
         try {
             addTypeHierarchy(t);
-
             addMethodCalls(t);
-
-            // add the actual type usage
+            addTypeUsage(t);
 
             // add the actual methodcalls called on this TU
 
@@ -70,8 +82,7 @@ public class DatabaseTypeUsageCollector extends TypeUsageCollector {
         Collections.reverse(typeHierarchy);
         debug("Adding TypeHierarchy to db: %s\n", typeHierarchy);
 
-        //TODO replace this complicated stuff with a MERGE statement?! http://hsqldb.org/doc/2.0/guide/dataaccess-chapt.html#dac_merge_statement
-        // especially because right now it's not actually thread safe anymore...
+        // TODO does this offer any actual performance advantages or is it rather useless?
         ResultSet typeCount;
         synchronized (checkTypesStatement) {
             checkTypesStatement.clearParameters();
@@ -84,38 +95,20 @@ public class DatabaseTypeUsageCollector extends TypeUsageCollector {
         // all types are already in the database, no need to continue
         if (typeCount.next() && typeCount.getInt(1) == typeHierarchy.size()) return;
 
-        // check all types starting from the topmost parent and add them if necessary
-        Integer parentId = null;
-        ResultSet currentType;
-        for (String type : typeHierarchy) {
-            synchronized (getTypeStatement) {
-                getTypeStatement.clearParameters();
-                getTypeStatement.setString(1, type);
-                currentType = getTypeStatement.executeQuery();
-            }
-
-            if (!currentType.next()) {
-                synchronized (addTypeStatement) {
-                    addMethodStatement.clearParameters();
-                    if (parentId != null) {
-                        addTypeStatement.setInt(1, parentId);
-                    } else {
-                        addTypeStatement.setNull(1, Types.INTEGER);
-                    }
-                    addTypeStatement.setString(2, type);
-                    addTypeStatement.execute();
+        // check all types starting from the topmost parent and merge them in batch
+        String parentName = null;
+        for (String typeName : typeHierarchy) {
+            synchronized (addTypeStatement) {
+                addTypeStatement.clearParameters();
+                addTypeStatement.setString(1, typeName);
+                if (parentName != null) {
+                    addTypeStatement.setString(2, parentName);
+                } else {
+                    addTypeStatement.setNull(2, Types.VARCHAR);
                 }
-
-                // get current ID, set parameter again since we don't now if another thread used this statement in the meantime
-                synchronized (getTypeStatement) {
-                    getTypeStatement.clearParameters();
-                    getTypeStatement.setString(1, type);
-                    currentType = getTypeStatement.executeQuery();
-                }
-                currentType.next();
+                addTypeStatement.execute();
             }
-            // set parentId for next iteration
-            parentId = currentType.getInt(1);
+            parentName = typeName;
         }
     }
 
@@ -146,6 +139,24 @@ public class DatabaseTypeUsageCollector extends TypeUsageCollector {
             }
 
             addMethodStatement.executeBatch();
+        }
+    }
+
+    /** Add the actual type usage to db */
+    private void addTypeUsage(TypeUsage t) throws SQLException {
+        synchronized (addTypeUsageStatement) {
+            addTypeUsageStatement.clearParameters();
+            addTypeUsageStatement.setString(1, t.type);
+
+            addTypeUsageStatement.setString(2, t.getLocation());
+            if (t.getLineNr() != null) {
+                addTypeUsageStatement.setInt(3, t.getLineNr());
+            } else {
+                addTypeUsageStatement.setNull(3, Types.INTEGER);
+            }
+
+            addTypeUsageStatement.setString(4, t.getContext());
+            addTypeUsageStatement.execute();
         }
     }
 
