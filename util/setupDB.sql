@@ -14,6 +14,7 @@ CREATE TABLE type (
 	parentId INTEGER, 
 	typeName VARCHAR(1024) UNIQUE NOT NULL
 );
+COMMIT WORK;
 
 /* All methods which are somewhere called on some type */
 CREATE TABLE method (
@@ -21,6 +22,7 @@ CREATE TABLE method (
 	typeId INTEGER FOREIGN KEY REFERENCES type(typeId),
 	methodName VARCHAR(1024) NOT NULL
 );
+COMMIT WORK;
 
 /* Information for type usages which is not calculated and excluding the call list */
 CREATE TABLE typeusage (
@@ -30,6 +32,7 @@ CREATE TABLE typeusage (
 	lineNr INTEGER,
 	context VARCHAR(1024) NOT NULL
 );
+COMMIT WORK;
 
 /* links method and type usages to a list of method calls */
 CREATE TABLE callList (
@@ -37,6 +40,7 @@ CREATE TABLE callList (
 	methodId INTEGER FOREIGN KEY REFERENCES method(methodId),
 	position INTEGER
 );
+COMMIT WORK;
 
 /* Show types with all methods which are called on them */
 CREATE VIEW typeWithMethods AS
@@ -45,6 +49,7 @@ SELECT type.typeName, GROUP_CONCAT(method.methodName SEPARATOR ', ') AS methods
 	ON type.typeId = method.typeId
 	GROUP BY type.typeName
 ;
+COMMIT WORK;
 
 /* A list of calls for each type usage */
 CREATE VIEW typeusageCalls AS
@@ -54,13 +59,15 @@ SELECT tu.typeusageId, GROUP_CONCAT(method.methodName SEPARATOR ', ') AS methodC
 	JOIN method ON cl.methodId = method.methodId
 	GROUP BY tu.typeusageId /* ORDER BY cl.position */
 ;
+COMMIT WORK;
 
 /* Show complete typeusages as they would be printed -  location, lineNr, methodContext, type, methodCalls, (_extends) */
 CREATE VIEW showTypeusageComplete AS
-SELECT tu.class, tu.lineNr, tu.context, type.typeName, tuc.methodCalls
+SELECT tu.typeusageId, tu.class, tu.lineNr, tu.context, type.typeName, tuc.methodCalls
 	FROM typeusage tu, type, typeusageCalls tuc
 	WHERE tu.typeId = type.typeId AND tu.typeusageId = tuc.typeusageId
 ;
+COMMIT WORK;
 
 /* Find all typeusages which are exactly equal to another tu */
 CREATE VIEW equal AS
@@ -77,6 +84,7 @@ SELECT ta.typeusageId, tb.typeusageId as eqId
 		EXCEPT
 		SELECT cla.methodId FROM callList cla WHERE ta.typeusageId = cla.typeusageId))
 ;
+COMMIT WORK;
 
 -- debug view to check if equals is working as intended
 CREATE VIEW showEquals AS
@@ -86,57 +94,39 @@ SELECT ta.class, tb.class AS B_class, ta.typeId, tb.typeId AS B_typeId, ta.conte
 	JOIN typeusage tb ON tb.typeusageId = e.eqId
 	JOIN typeusageCalls tcb ON tb.typeusageId = tcb.typeusageId
 ;
+COMMIT WORK;
+
+-- Shows the size of the calllist of B without the calls from A
+CREATE VIEW callListDifferences AS
+SELECT ta.typeusageId as aID, tb.typeusageId AS bID, 
+	(SELECT  COUNT(*) FROM (SELECT clc.methodId FROM callList clc WHERE tb.typeusageId = clc.typeusageId
+		EXCEPT
+		SELECT cld.methodId FROM callList cld WHERE ta.typeusageId = cld.typeusageId)) AS difference
+	FROM typeusage ta JOIN typeusage tb ON ta.typeId = tb.typeId AND ta.context = tb.context
+;
+COMMIT WORK;
 
 /* */
 CREATE VIEW almostEqual AS 
-SELECT ta.typeusageId, tb.typeusageId as aeqId
-	FROM typeusage ta JOIN typeusage tb ON ta.typeId = tb.typeId AND ta.context = tb.context
+SELECT a.aID, a.bID
+	FROM callListDifferences a JOIN callListDifferences b ON a.aID = b.bID AND a.bID = b.aID
 	WHERE
 		--- call list of right side without callList of left side should have size of 1
-		EXISTS ( SELECT COUNT(*) FROM 
-			(
-				SELECT clc.methodId FROM callList clc WHERE tb.typeusageId = clc.typeusageId
-				EXCEPT
-				SELECT cld.methodId FROM callList cld WHERE ta.typeusageId = cld.typeusageId
-			)
-			HAVING COUNT(*) = 1)
-		-- call list of left side without call list of right side should be empty
-		AND NOT EXISTS (SELECT cla.methodId FROM callList cla WHERE ta.typeusageId = cla.typeusageId
-			EXCEPT
-			SELECT clb.methodId FROM callList clb WHERE tb.typeusageId = clb.typeusageId)
-
+	 	a.difference < 0 OR a.difference = 1
+	 	-- call list of left side without call list of right side should be empty
+	 	AND b.difference = 0 
 ;
-
-
-SELECT ta.typeusageId, tb.typeusageId as aeqId
-	FROM typeusage ta JOIN typeusage tb ON ta.typeId = tb.typeId AND ta.context = tb.context
-	JOIN (SELECT clc.methodId FROM callList clc WHERE tb.typeusageId = clc.typeusageId
-		EXCEPT
-		SELECT cld.methodId FROM callList cld WHERE ta.typeusageId = cld.typeusageId ) test
-			HAVING COUNT(*) = 1)
-
-SELECT ta.typeusageId, tb.typeusageId as aeqId, COUNT(methodId)
-	FROM (Select methodId FROM typeusage ta JOIN callList cla ON ta.typeusageId = cla.typeusageId
-	EXCEPT
-	Select methodId FROM typeusage tb JOIN callList clb ON tb.typeusageId = clb.typeusageId)
-
-	ON ta.typeId = tb.typeId AND ta.context = tb.context
-SELECT clb.methodId FROM callList clb WHERE tb.typeusageId = clb.typeusageId
-	WHERE
-		-- call list of left side without call list of right side should be empty
-		NOT EXISTS (SELECT cla.methodId FROM callList cla WHERE ta.typeusageId = cla.typeusageId
-			EXCEPT
-			SELECT clb.methodId FROM callList clb WHERE tb.typeusageId = clb.typeusageId)
-;
+COMMIT WORK;
 
 -- debug view to check if almostEqual does the right thing
 CREATE VIEW showAlmostEquals AS
 SELECT ta.class, tb.class AS B_class, ta.typeId, tb.typeId AS B_typeId, ta.context, tb.context AS B_context, tca.methodCalls, tcb.methodCalls AS B_methodCalls
 	FROM typeusage ta JOIN typeusageCalls tca ON ta.typeusageId = tca.typeusageId
-	JOIN almostEqual ae ON ta.typeusageId = ae.typeusageId
-	JOIN typeusage tb ON tb.typeusageId = ae.aeqId
+	JOIN almostEqual ae ON ta.typeusageId = ae.aID
+	JOIN typeusage tb ON tb.typeusageId = ae.bID
 	JOIN typeusageCalls tcb ON tb.typeusageId = tcb.typeusageId
 ;
+COMMIT WORK;
 
 /* Mapping from supertypes to all their children */
 /*
