@@ -18,10 +18,14 @@ import java.util.HashMap;
 public class InstanceFieldDetector {
 
     /** Keep data across methods to correctly collect type usage data on instance fields */
-    private HashMap<SootField, TypeUsage> crossMethodData = new HashMap<SootField, TypeUsage>();
+    private HashMap<SootField, TypeUsage> crossMethodData;
 
     /** Maps from a local to an instance field reference */
     private HashMap<Value, SootField> pointsTo = new HashMap<Value, SootField>();
+
+    public InstanceFieldDetector(HashMap<SootField, TypeUsage> crossMethodData) {
+        this.crossMethodData = crossMethodData;
+    }
 
     /** Populates pointsTo map by iterating over all statements in current method */
     public void readMethod(Body body) {

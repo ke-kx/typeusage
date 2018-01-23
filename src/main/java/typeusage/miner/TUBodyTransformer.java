@@ -8,6 +8,7 @@ import soot.jimple.toolkits.pointer.LocalMustAliasAnalysis;
 import soot.toolkits.graph.ExceptionalUnitGraph;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -22,25 +23,23 @@ public class TUBodyTransformer extends BodyTransformer {
     /** Used to determine if two local variables point to the same object? */
     private LocalMustAliasAnalysis aliasInfo;
 
-    /** Used to determine if two locals point to the same instance field */
-    private final InstanceFieldDetector instanceFieldDetector;
+    /** Keep data across methods to correctly collect type usage data on instance fields */
+    private HashMap<SootField, TypeUsage> crossMethodData = new HashMap<>();
 
     /** Constructor */
     public TUBodyTransformer(IMethodCallCollector m) {
         collector = m;
-        instanceFieldDetector = new InstanceFieldDetector();
     }
 
     /** Actual worker function, is applied to each method body **/
     @Override
     protected void internalTransform(Body body, String phase, @SuppressWarnings("rawtypes") Map options) {
         aliasInfo = new LocalMustAliasAnalysis(new ExceptionalUnitGraph(body));
-        synchronized (instanceFieldDetector) {
-            instanceFieldDetector.readMethod(body);
-        }
+        InstanceFieldDetector ifd = new InstanceFieldDetector(crossMethodData);
+        ifd.readMethod(body);
 
-        List<MethodCall> methodCalls = extractMethodCalls(body);
-        List<TypeUsage> lVariables = extractTypeUsages(methodCalls, body);
+        List<MethodCall> methodCalls = extractMethodCalls(body, ifd);
+        List<TypeUsage> lVariables = extractTypeUsages(methodCalls, body, ifd);
 
         // output the variables
         for (TypeUsage aVariable : lVariables) {
@@ -51,7 +50,7 @@ public class TUBodyTransformer extends BodyTransformer {
     }
 
     /** Iterate through all statements in method body and collect method calls */
-    private List<MethodCall> extractMethodCalls(Body body) {
+    private List<MethodCall> extractMethodCalls(Body body, InstanceFieldDetector ifd) {
         List<MethodCall> calls = new ArrayList<MethodCall>();
 
         // for each statement in method body
@@ -76,7 +75,7 @@ public class TUBodyTransformer extends BodyTransformer {
     }
 
     /** Go over list of methodCalls and extract typeUsages by grouping together calls on the same object */
-    private List<TypeUsage> extractTypeUsages(List<MethodCall> methodCalls, Body body) {
+    private List<TypeUsage> extractTypeUsages(List<MethodCall> methodCalls, Body body, InstanceFieldDetector ifd) {
         List<TypeUsage> typeUsages = new ArrayList<TypeUsage>();
 
         for (MethodCall currentCall : methodCalls) {
@@ -88,32 +87,30 @@ public class TUBodyTransformer extends BodyTransformer {
             }
             collector.debug("v: " + type);
 
-            synchronized (instanceFieldDetector) {
-                TypeUsage correspondingTypeUsage = findTypeUsage(currentCall, typeUsages);
-                if (correspondingTypeUsage != null &&
-                        // if there is a cast this test avoids unsound data (e.g. two method calls of different
-                        //classes in the same type-usage)
-                        correspondingTypeUsage.type.equals(type.toString())) {
-                    // TypeUsage already exists, add currentCall
-                    correspondingTypeUsage.addMethodCall(currentCall, collector);
-                    collector.debug("adding " + currentCall + " to " + correspondingTypeUsage);
-                } else {
-                    // Type usage doesn't exist yet, create object and add to typeUsages List
-                    TypeUsage newTypeUsage = new TypeUsage(body, currentCall, type, collector);
-                    typeUsages.add(newTypeUsage);
+            TypeUsage correspondingTypeUsage = findTypeUsage(currentCall, typeUsages, ifd);
+            if (correspondingTypeUsage != null &&
+                    // if there is a cast this test avoids unsound data (e.g. two method calls of different
+                    //classes in the same type-usage)
+                    correspondingTypeUsage.type.equals(type.toString())) {
+                // TypeUsage already exists, add currentCall
+                correspondingTypeUsage.addMethodCall(currentCall, collector);
+                collector.debug("adding " + currentCall + " to " + correspondingTypeUsage);
+            } else {
+                // Type usage doesn't exist yet, create object and add to typeUsages List
+                TypeUsage newTypeUsage = new TypeUsage(body, currentCall, type, collector);
+                typeUsages.add(newTypeUsage);
 
-                    // add link to instance field if it exists
-                    instanceFieldDetector.addIfAppropiate(currentCall, newTypeUsage);
-                }
+                // add link to instance field if it exists
+                ifd.addIfAppropiate(currentCall, newTypeUsage);
             }
         }
         return typeUsages;
     }
 
     /** Go through list of typeUsages and find the one belonging to call */
-    private TypeUsage findTypeUsage(MethodCall call, List<TypeUsage> variables) {
-        if (instanceFieldDetector.pointsToInstanceField(call)) {
-            return instanceFieldDetector.getTypeUsage(call);
+    private TypeUsage findTypeUsage(MethodCall call, List<TypeUsage> variables, InstanceFieldDetector ifd) {
+        if (ifd.pointsToInstanceField(call)) {
+            return ifd.getTypeUsage(call);
         }
 
         for (TypeUsage typeUsage : variables) {
@@ -128,7 +125,7 @@ public class TUBodyTransformer extends BodyTransformer {
                     collector.debug(call.getLocal() + " alias to " + e.getLocal());
                     return typeUsage;
                 }
-                if (instanceFieldDetector.mayPointToSameInstanceField(call.getLocal(), e.getLocal())) {
+                if (ifd.mayPointToSameInstanceField(call.getLocal(), e.getLocal())) {
                     return typeUsage;
                 }
             }
