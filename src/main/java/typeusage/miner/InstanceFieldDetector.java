@@ -21,12 +21,10 @@ public class InstanceFieldDetector {
     private HashMap<SootField, TypeUsage> crossMethodData = new HashMap<SootField, TypeUsage>();
 
     /** Maps from a local to an instance field reference */
-    private HashMap<Value, SootField> pointsTo;
+    private HashMap<Value, SootField> pointsTo = new HashMap<Value, SootField>();
 
     /** Populates pointsTo map by iterating over all statements in current method */
     public void readMethod(Body body) {
-        pointsTo = new HashMap<Value, SootField>();
-
         // simple resolving
         for (Unit u : body.getUnits()) { // for each statement
             Stmt stmt = (Stmt) u;

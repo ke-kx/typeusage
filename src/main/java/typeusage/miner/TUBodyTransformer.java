@@ -23,7 +23,7 @@ public class TUBodyTransformer extends BodyTransformer {
     private LocalMustAliasAnalysis aliasInfo;
 
     /** Used to determine if two locals point to the same instance field */
-    private InstanceFieldDetector instanceFieldDetector;
+    private final InstanceFieldDetector instanceFieldDetector;
 
     /** Constructor */
     public TUBodyTransformer(IMethodCallCollector m) {
@@ -88,21 +88,23 @@ public class TUBodyTransformer extends BodyTransformer {
             }
             collector.debug("v: " + type);
 
-            TypeUsage correspondingTypeUsage = findTypeUsage(currentCall, typeUsages);
-            if (correspondingTypeUsage != null &&
-                    // if there is a cast this test avoids unsound data (e.g. two method calls of different
-                    //classes in the same type-usage)
-                    correspondingTypeUsage.type.equals(type.toString())) {
-                // TypeUsage already exists, add currentCall
-                correspondingTypeUsage.addMethodCall(currentCall, collector);
-                collector.debug("adding " + currentCall + " to " + correspondingTypeUsage);
-            } else {
-                // Type usage doesn't exist yet, create object and add to typeUsages List
-                TypeUsage newTypeUsage = new TypeUsage(body, currentCall, type, collector);
-                typeUsages.add(newTypeUsage);
+            synchronized (instanceFieldDetector) {
+                TypeUsage correspondingTypeUsage = findTypeUsage(currentCall, typeUsages);
+                if (correspondingTypeUsage != null &&
+                        // if there is a cast this test avoids unsound data (e.g. two method calls of different
+                        //classes in the same type-usage)
+                        correspondingTypeUsage.type.equals(type.toString())) {
+                    // TypeUsage already exists, add currentCall
+                    correspondingTypeUsage.addMethodCall(currentCall, collector);
+                    collector.debug("adding " + currentCall + " to " + correspondingTypeUsage);
+                } else {
+                    // Type usage doesn't exist yet, create object and add to typeUsages List
+                    TypeUsage newTypeUsage = new TypeUsage(body, currentCall, type, collector);
+                    typeUsages.add(newTypeUsage);
 
-                // add link to instance field if it exists
-                instanceFieldDetector.addIfAppropiate(currentCall, newTypeUsage);
+                    // add link to instance field if it exists
+                    instanceFieldDetector.addIfAppropiate(currentCall, newTypeUsage);
+                }
             }
         }
         return typeUsages;
