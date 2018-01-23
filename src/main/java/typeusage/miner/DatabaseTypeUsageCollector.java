@@ -24,6 +24,9 @@ public class DatabaseTypeUsageCollector extends TypeUsageCollector {
     /** Insert type usage (1 = typeName, 2 = class, 3 = lineNr, 4 = context) */
     private final PreparedStatement addTypeUsageStatement;
 
+    /** Insert call into callList (1 = typeusageId, 2 = typeId, 3 = methodName, 4 = position) */
+    private final PreparedStatement addCallStatement;
+
     public DatabaseTypeUsageCollector(String databaseLocation) {
         try {
             databaseConnection = DriverManager.getConnection("jdbc:hsqldb:file:" + databaseLocation, "SA", "");
@@ -36,11 +39,15 @@ public class DatabaseTypeUsageCollector extends TypeUsageCollector {
                         "WHEN NOT MATCHED THEN INSERT VALUES (DEFAULT, (SELECT typeId FROM type WHERE typeName = ?), vals.typeName)"
             );
             addMethodStatement = databaseConnection.prepareStatement(
-                "MERGE INTO method USING (VALUES( ? )) AS vals(methodName) " +
+                    "MERGE INTO method USING (VALUES( ? )) AS vals(methodName) " +
                         "ON method.typeId = ? AND method.methodName = vals.methodName " +
                         "WHEN NOT MATCHED THEN INSERT VALUES (DEFAULT, ?, vals.methodName)");
-            addTypeUsageStatement = databaseConnection.prepareStatement("INSERT INTO typeusage(typeusageId, typeId, class, lineNr, context) " +
-                    " VALUES( DEFAULT, (SELECT typeId FROM type WHERE typeName = ?), ?, ?, ? )");
+            addTypeUsageStatement = databaseConnection.prepareStatement(
+                    "INSERT INTO typeusage(typeusageId, typeId, class, lineNr, context) " +
+                        "VALUES( DEFAULT, (SELECT typeId FROM type WHERE typeName = ?), ?, ?, ? )", Statement.RETURN_GENERATED_KEYS);
+            addCallStatement = databaseConnection.prepareStatement(
+                    "INSERT INTO callList(typeusageId, methodId, position) " +
+                        "VALUES( ?, (SELECT methodId FROM method WHERE typeId = ? AND methodName = ? ), ? )");
         } catch (SQLException e) {
             e.printStackTrace();
             // rethrow to enable setting final variables in try-catch block
@@ -65,11 +72,9 @@ public class DatabaseTypeUsageCollector extends TypeUsageCollector {
 
         try {
             addTypeHierarchy(t);
-            addMethodCalls(t);
-            addTypeUsage(t);
-
-            // add the actual methodcalls called on this TU
-
+            int typeId = addMethodCalls(t);
+            int typeusageId = addTypeUsage(t);
+            addCallList(typeusageId, typeId, t);
         } catch (SQLException e) {
             e.printStackTrace();
             throw new RuntimeException();
@@ -113,7 +118,7 @@ public class DatabaseTypeUsageCollector extends TypeUsageCollector {
     }
 
     /** Add all method calls of this TU into the DB **/
-    private void addMethodCalls(TypeUsage t) throws SQLException {
+    private int addMethodCalls(TypeUsage t) throws SQLException {
         // determine typeID of type the method calls belong to
         Integer typeId;
         synchronized (getTypeStatement) {
@@ -140,10 +145,13 @@ public class DatabaseTypeUsageCollector extends TypeUsageCollector {
 
             addMethodStatement.executeBatch();
         }
+
+        return typeId;
     }
 
     /** Add the actual type usage to db */
-    private void addTypeUsage(TypeUsage t) throws SQLException {
+    private int addTypeUsage(TypeUsage t) throws SQLException {
+        ResultSet ret;
         synchronized (addTypeUsageStatement) {
             addTypeUsageStatement.clearParameters();
             addTypeUsageStatement.setString(1, t.type);
@@ -157,6 +165,31 @@ public class DatabaseTypeUsageCollector extends TypeUsageCollector {
 
             addTypeUsageStatement.setString(4, t.getContext());
             addTypeUsageStatement.execute();
+
+            ret = addTypeUsageStatement.getGeneratedKeys();
+            if (ret.next()) {
+                return ret.getInt(1);
+            }
+        }
+        throw new RuntimeException("TypeUsage not succesfully inserted!");
+    }
+
+    /** Add the actual methodcalls called on this TU */
+    private void addCallList(int typeusageId, Integer typeId, TypeUsage t) throws SQLException {
+        synchronized (addCallStatement) {
+            addCallStatement.clearParameters();
+            addCallStatement.setInt(1, typeusageId);
+            addCallStatement.setInt(2, typeId);
+
+            int position = 0;
+            //TODO really use "methodCallsInOrder"? seems to have a lot of problems regarding double use + then later equality analysis...
+            for (String call : t.getMethodCalls()) {
+                addCallStatement.setString(3, call);
+                addCallStatement.setInt(4, position);
+                addCallStatement.addBatch();
+                position++;
+            }
+            addCallStatement.executeBatch();
         }
     }
 

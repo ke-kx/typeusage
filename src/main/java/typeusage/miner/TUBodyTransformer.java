@@ -23,7 +23,7 @@ public class TUBodyTransformer extends BodyTransformer {
     private LocalMustAliasAnalysis aliasInfo;
 
     /** Used to determine if two locals point to the same instance field */
-    private volatile InstanceFieldDetector instanceFieldDetector;
+    private InstanceFieldDetector instanceFieldDetector;
 
     /** Constructor */
     public TUBodyTransformer(IMethodCallCollector m) {
@@ -35,7 +35,9 @@ public class TUBodyTransformer extends BodyTransformer {
     @Override
     protected void internalTransform(Body body, String phase, @SuppressWarnings("rawtypes") Map options) {
         aliasInfo = new LocalMustAliasAnalysis(new ExceptionalUnitGraph(body));
-        instanceFieldDetector.readMethod(body);
+        synchronized (instanceFieldDetector) {
+            instanceFieldDetector.readMethod(body);
+        }
 
         List<MethodCall> methodCalls = extractMethodCalls(body);
         List<TypeUsage> lVariables = extractTypeUsages(methodCalls, body);

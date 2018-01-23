@@ -32,11 +32,12 @@ public class TypeUsage {
     private String methodContext = "!";
 
     /** List of methodCalls belonging to this TypeUsage */
-    private List<MethodCall> underlyingLocals = new ArrayList<MethodCall>();
+    private List<MethodCall> underlyingLocals = new ArrayList<>();
 
     //TODO this could potentially be replaced by just the arrayList, correct?
     /** String form of methodCalls belonging to this TU */
-    protected final Set<String> methodCalls = new HashSet<String>();
+    protected final Set<String> methodCalls = new HashSet<>();
+    protected List<String> methodCallsInOrder = new ArrayList<>();
 
     /** The type hierarchy of the type  */
     private List<String> _extends = new ArrayList<>();
@@ -114,6 +115,7 @@ public class TypeUsage {
     public void addMethodCall(MethodCall call, IMethodCallCollector collector) {
         underlyingLocals.add(call);
         methodCalls.add("call:" + collector.translateCallSignature(call.getMethod()));
+        methodCallsInOrder.add(collector.translateCallSignature(call.getMethod()));
     }
 
     public String getLocation() {

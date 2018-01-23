@@ -120,5 +120,58 @@ class Main {
         ((String) x5).matches("");
 
     }
+}
 
+/** Exactly the same Method calls as Main */
+class Equals {
+    Field instanceVar;
+    Field42 instanceVar2;
+
+    public void context(MethodParameter x1, int x) {
+        //
+        x1.test1(); // method parameter
+        x1.test2(); // method parameter
+
+        // local variables
+        LocalVariable x2 = new LocalVariable();
+        x2.test3();
+        if (x < 10) {
+            x2.cee(); // test if conditionals pose problems
+        }
+
+        Inheritance x24 = new Inheritance();
+        x24.test3();
+        if (x < 10) {
+            x24.cee(); // test if conditionals pose problems
+        }
+
+        instanceVar.foo(); // cross-method field call
+
+        instanceVar2.foo42(); // field
+        instanceVar2.test42(); // field
+    }
+}
+
+/** Exactly one method deleted from each type in comparison to equals */
+class AlmostEquals {
+    Field instanceVar;
+    Field42 instanceVar2;
+
+    public void context(MethodParameter x1, int x) {
+        //
+        x1.test1(); // method parameter
+
+        // local variables
+        LocalVariable x2 = new LocalVariable();
+        if (x < 10) {
+            x2.cee(); // test if conditionals pose problems
+        }
+
+        Inheritance x24 = new Inheritance();
+        if (x < 10) {
+            x24.cee(); // test if conditionals pose problems
+        }
+
+        instanceVar2.test42(); // field
+    }
 }
