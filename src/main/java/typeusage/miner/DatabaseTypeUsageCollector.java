@@ -31,23 +31,23 @@ public class DatabaseTypeUsageCollector extends TypeUsageCollector {
         try {
             databaseConnection = DriverManager.getConnection("jdbc:hsqldb:file:" + databaseLocation, "SA", "");
             checkTypesStatement = databaseConnection.prepareStatement("SELECT COUNT(*) FROM type WHERE typeName IN( UNNEST(?) )");
-            getTypeStatement = databaseConnection.prepareStatement("SELECT typeId FROM type WHERE typeName = ?");
+            getTypeStatement = databaseConnection.prepareStatement("SELECT id FROM type WHERE typeName = ?");
 
             addTypeStatement = databaseConnection.prepareStatement(
                     "MERGE INTO type USING (VALUES( ? )) AS vals(typeName) " +
                         "ON type.typeName = vals.typeName " +
-                        "WHEN NOT MATCHED THEN INSERT VALUES (DEFAULT, (SELECT typeId FROM type WHERE typeName = ?), vals.typeName)"
+                        "WHEN NOT MATCHED THEN INSERT VALUES (DEFAULT, (SELECT id FROM type WHERE typeName = ?), vals.typeName)"
             );
             addMethodStatement = databaseConnection.prepareStatement(
                     "MERGE INTO method USING (VALUES( ? )) AS vals(methodName) " +
                         "ON method.typeId = ? AND method.methodName = vals.methodName " +
                         "WHEN NOT MATCHED THEN INSERT VALUES (DEFAULT, ?, vals.methodName)");
             addTypeUsageStatement = databaseConnection.prepareStatement(
-                    "INSERT INTO typeusage(typeusageId, typeId, class, lineNr, context) " +
-                        "VALUES( DEFAULT, (SELECT typeId FROM type WHERE typeName = ?), ?, ?, ? )", Statement.RETURN_GENERATED_KEYS);
+                    "INSERT INTO typeusage(id, typeId, class, lineNr, context) " +
+                        "VALUES( DEFAULT, (SELECT id FROM type WHERE typeName = ?), ?, ?, ? )", Statement.RETURN_GENERATED_KEYS);
             addCallStatement = databaseConnection.prepareStatement(
                     "INSERT INTO callList(typeusageId, methodId, position) " +
-                        "VALUES( ?, (SELECT methodId FROM method WHERE typeId = ? AND methodName = ? ), ? )");
+                        "VALUES( ?, (SELECT id FROM method WHERE typeId = ? AND methodName = ? ), ? )");
         } catch (SQLException e) {
             e.printStackTrace();
             // rethrow to enable setting final variables in try-catch block
