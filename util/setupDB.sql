@@ -125,6 +125,26 @@ SELECT tu.id, ISNULL(1.0 - (ec.count / (ec.count + aec.count)), 0.0) AS score
 	LEFT JOIN almostEqualCount aec ON tu.id = aec.id
 ;
 
+-- build strangenessWrongMethodcall and StrangenessMethodTooMuch in the same way?
+-- wrong method call == ae -> difference 1 on both sides instead of 0
+-- method too much difference the other way around?
+
+-- strangeness score related to calling the WRONG method -> diference has to be symmetrical 1 AND the same method is called (damn, this means lots of nested clauses...)
+/*
+seems to be pretty complicated right now, need to consider not only the NUMBER but also which call is missing -> build lots of tables in between.
+Should be no problem, but not now
+
+CREATE VIEW strangenessWrongMethodCall AS
+WITH extendedCallListDiff AS
+SELECT ta.id as leftId, tb.id AS rightId, 
+	(SELECT  COUNT(*) FROM (SELECT clc.methodId FROM callList clc WHERE tb.id = clc.typeusageId
+		EXCEPT SELECT cld.methodId FROM callList cld WHERE ta.id = cld.typeusageId)) AS difference
+	FROM typeusage ta JOIN typeusage tb ON ta.typeId = tb.typeId AND ta.context = tb.context
+
+*/
+
+
+
 /* Mapping from supertypes to all their children */
 /*
 CREATE VIEW children AS
