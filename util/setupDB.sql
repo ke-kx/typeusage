@@ -90,7 +90,7 @@ COMMIT WORK;
 
 -- Shows the size of the calllist of B without the calls from A
 CREATE VIEW callListDifferences AS
-SELECT ta.id as aID, tb.id AS bID, 
+SELECT ta.id as leftId, tb.id AS rightId, 
 	(SELECT  COUNT(*) FROM (SELECT clc.methodId FROM callList clc WHERE tb.id = clc.typeusageId
 		EXCEPT SELECT cld.methodId FROM callList cld WHERE ta.id = cld.typeusageId)) AS difference
 	FROM typeusage ta JOIN typeusage tb ON ta.typeId = tb.typeId AND ta.context = tb.context
@@ -98,8 +98,8 @@ SELECT ta.id as aID, tb.id AS bID,
 
 -- all ids on the right (bId) are almost equal to the ones on the left (have one more method call)
 CREATE VIEW almostEqual AS 
-SELECT a.aID, a.bID
-	FROM callListDifferences a JOIN callListDifferences b ON a.aID = b.bID AND a.bID = b.aID
+SELECT a.leftId as id, a.rightId as aeqId
+	FROM callListDifferences a JOIN callListDifferences b ON a.leftId = b.rightId AND a.rightId = b.leftId
 	WHERE
 		--- call list of right side without callList of left side should have size of 1
 	 	a.difference < 0 OR a.difference = 1
@@ -111,13 +111,19 @@ SELECT a.aID, a.bID
 CREATE VIEW showAlmostEquals AS
 SELECT ta.class, tb.class AS B_class, ta.typeId, tb.typeId AS B_typeId, ta.context, tb.context AS B_context, tca.methodCalls, tcb.methodCalls AS B_methodCalls
 	FROM typeusage ta JOIN typeusageCalls tca ON ta.id = tca.id
-	JOIN almostEqual ae ON ta.id = ae.aID
-	JOIN typeusage tb ON tb.id = ae.bID
+	JOIN almostEqual ae ON ta.id = ae.id
+	JOIN typeusage tb ON tb.id = ae.aeqId
 	JOIN typeusageCalls tcb ON tb.id = tcb.id
 ;
 
 -- strangeness score is calculated as S(x) = 1 - (|E(x)| / (|E(x)| + |A(x)|))
-
+CREATE VIEW strangeness AS
+WITH equalCount as (SELECT id, CAST(COUNT (eqID) AS FLOAT) AS count FROM equal GROUP BY id),
+	almostEqualCount as (SELECT id, CAST(COUNT (aeqID) AS FLOAT) AS count FROM almostEqual GROUP BY id)
+SELECT tu.id, ISNULL(1.0 - (ec.count / (ec.count + aec.count)), 0.0) AS score
+	FROM typeusage tu JOIN equalCount ec ON tu.id = ec.id
+	LEFT JOIN almostEqualCount aec ON tu.id = aec.id
+;
 
 /* Mapping from supertypes to all their children */
 /*
