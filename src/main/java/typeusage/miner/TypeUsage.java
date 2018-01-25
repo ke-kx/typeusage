@@ -47,7 +47,7 @@ public class TypeUsage {
 
     public TypeUsage(Body body, MethodCall call, Type type, IMethodCallCollector collector) {
         methodContext = collector.translateContextSignature(body.getMethod());
-        collector.debug(String.format("Creating type usage for %s with %s", methodContext, call.getLocal()));
+        collector.debug("Creating type usage for %s with %s", methodContext, call.getLocal());
 
         location = body.getMethod().getDeclaringClass().toString();
         SourceLnPosTag sourceLnTag = (SourceLnPosTag) call.getStmt().getTag("SourceLnPosTag");

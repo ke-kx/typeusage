@@ -56,18 +56,18 @@ public class TUBodyTransformer extends BodyTransformer {
         // for each statement in method body
         for (Unit u : body.getUnits()) {
             Stmt statement = (Stmt) u;
-            collector.debug(statement + "-" + statement.getClass());
+            collector.debug("%s - %s\n", statement, statement.getClass());
 
             if (statement.containsInvokeExpr()) {
                 InvokeExpr invokeExpr = statement.getInvokeExpr();
-                collector.debug(invokeExpr.toString());
+                collector.debug("%s\n", invokeExpr);
                 if (invokeExpr instanceof InstanceInvokeExpr
                     // && ! (invokeExpr instanceof SpecialInvokeExpr)
                         ) {
                     Local local = (Local) ((InstanceInvokeExpr) invokeExpr).getBase();
                     MethodCall elem = new MethodCall(local, statement);
                     calls.add(elem);
-                    collector.debug(elem + " " + invokeExpr.getMethod().getDeclaringClass().getName());
+                    collector.debug("%s %s\n", elem, invokeExpr.getMethod().getDeclaringClass().getName());
                 }
             }
         }
@@ -85,7 +85,7 @@ public class TUBodyTransformer extends BodyTransformer {
                 // still couldn't determine type, skip this call
                 if (type instanceof NullType) continue;
             }
-            collector.debug("v: " + type);
+            collector.debug("v: %s\n", type);
 
             TypeUsage correspondingTypeUsage = findTypeUsage(currentCall, typeUsages, ifd);
             if (correspondingTypeUsage != null &&
@@ -94,7 +94,7 @@ public class TUBodyTransformer extends BodyTransformer {
                     correspondingTypeUsage.type.equals(type.toString())) {
                 // TypeUsage already exists, add currentCall
                 correspondingTypeUsage.addMethodCall(currentCall, collector);
-                collector.debug("adding " + currentCall + " to " + correspondingTypeUsage);
+                collector.debug("adding %s to %s\n", currentCall, correspondingTypeUsage);
             } else {
                 // Type usage doesn't exist yet, create object and add to typeUsages List
                 TypeUsage newTypeUsage = new TypeUsage(body, currentCall, type, collector);
@@ -116,13 +116,13 @@ public class TUBodyTransformer extends BodyTransformer {
         for (TypeUsage typeUsage : variables) {
             for (MethodCall e : typeUsage.getUnderlyingLocals()) {
                 if (call.getLocal() == e.getLocal()) {
-                    collector.debug(call.getLocal() + " is same as " + e.getLocal());
-                    collector.debug(typeUsage.type + " <-> " + e.getMethod().getDeclaringClass());
+                    collector.debug("%s is same as %s\n", call.getLocal(), e.getLocal());
+                    collector.debug("%s <-> %s\n", typeUsage.type, e.getMethod().getDeclaringClass());
                     return typeUsage;
                 }
 
                 if (aliasInfo.mustAlias(call.getLocal(), call.getStmt(), e.getLocal(), e.getStmt())) {
-                    collector.debug(call.getLocal() + " alias to " + e.getLocal());
+                    collector.debug("%s alias to %s\n", call.getLocal(), e.getLocal());
                     return typeUsage;
                 }
                 if (ifd.mayPointToSameInstanceField(call.getLocal(), e.getLocal())) {

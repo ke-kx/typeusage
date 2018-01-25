@@ -11,8 +11,8 @@ public class Main {
         c = new DatabaseTypeUsageCollector("output/test");
 
         String toBeAnalyzed = "/home/tesuji/jabref/bin";
-        toBeAnalyzed = "/home/tesuji/secure/teamscale/netbeans/build";
-        toBeAnalyzed = null;
+        //toBeAnalyzed = "/home/tesuji/secure/teamscale/engine";
+        //toBeAnalyzed = null;
 
         if (args.length > 0) {
             toBeAnalyzed = args[0];
