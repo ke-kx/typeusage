@@ -90,7 +90,7 @@ public class DatabaseTypeUsageCollector extends TypeUsageCollector {
     private void addTypeHierarchy(TypeUsage t) throws SQLException {
         List<String> typeHierarchy = t.getTypeHierarchy();
         Collections.reverse(typeHierarchy);
-        logger.info("Adding TypeHierarchy to db: {0}", typeHierarchy);
+        logger.info("Adding TypeHierarchy to db: {}", typeHierarchy);
 
         // TODO does this offer any actual performance advantages or is it rather useless?
         ResultSet typeCount;
@@ -137,7 +137,7 @@ public class DatabaseTypeUsageCollector extends TypeUsageCollector {
         }
 
         Set<String> methodsCalls = t.getMethodCalls();
-        logger.info("Saving methodcalls to db: {0}", methodsCalls);
+        logger.info("Saving methodcalls to db: {}", methodsCalls);
         synchronized (addMethodStatement) {
             addMethodStatement.clearParameters();
             addMethodStatement.setInt(2, typeId);

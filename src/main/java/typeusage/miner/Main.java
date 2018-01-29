@@ -1,8 +1,13 @@
 package typeusage.miner;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
 import java.io.File;
 
 public class Main {
+
+    private static final Logger logger = LogManager.getLogger();
 
     public final static String DEFAULT_DIR = "./target/test-classes/";
 
@@ -34,6 +39,7 @@ public class Main {
         }
         c.setDirToProcess(toBeAnalyzed);
 
+        logger.warn("STARTING NOW!!!");
         c.run();
     }
 
@@ -45,7 +51,7 @@ public class Main {
                 if (child.isDirectory()) {
                     String pathToAdd = child.getAbsolutePath() + "/classes";
                     if (new File(pathToAdd).exists()) {
-                        System.out.printf("Adding %s\n", pathToAdd);
+                        logger.info("Adding {}", pathToAdd);
                         collector.addToClassPath(pathToAdd);
                     }
                 }

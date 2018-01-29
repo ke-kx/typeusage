@@ -7,6 +7,9 @@ output
 # dataset files for analysis
 datasets
 
+# logfile folder
+log
+
 # Created by https://www.gitignore.io/api/eclipse,maven,intellij
 
 ### Eclipse ###

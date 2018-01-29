@@ -40,7 +40,7 @@ public class TUBodyTransformer extends BodyTransformer {
     protected void internalTransform(Body body, String phase, @SuppressWarnings("rawtypes") Map options) {
         aliasInfo = new LocalMustAliasAnalysis(new ExceptionalUnitGraph(body));
         //todo is crossMethodData getting too big?! when to reset it / how did they solve it (did they?)
-        // or related to logging? -> change that first
+        if (crossMethodData.size() % 100 == 0) logger.error("CrossMethodData size: {}", crossMethodData.size());
         InstanceFieldDetector ifd = new InstanceFieldDetector(crossMethodData);
         ifd.readMethod(body);
 
@@ -62,18 +62,18 @@ public class TUBodyTransformer extends BodyTransformer {
         // for each statement in method body
         for (Unit u : body.getUnits()) {
             Stmt statement = (Stmt) u;
-            logger.debug("{0} - {1}", statement, statement.getClass());
+            logger.debug("{} - {}", statement, statement.getClass());
 
             if (statement.containsInvokeExpr()) {
                 InvokeExpr invokeExpr = statement.getInvokeExpr();
-                logger.debug("{0}", invokeExpr);
+                logger.debug("{}", invokeExpr);
                 if (invokeExpr instanceof InstanceInvokeExpr
                     // && ! (invokeExpr instanceof SpecialInvokeExpr)
                         ) {
                     Local local = (Local) ((InstanceInvokeExpr) invokeExpr).getBase();
                     MethodCall elem = new MethodCall(local, statement);
                     calls.add(elem);
-                    logger.debug("{0} {1}", elem, invokeExpr.getMethod().getDeclaringClass().getName());
+                    logger.debug("{} {}", elem, invokeExpr.getMethod().getDeclaringClass().getName());
                 }
             }
         }
@@ -91,7 +91,7 @@ public class TUBodyTransformer extends BodyTransformer {
                 // still couldn't determine type, skip this call
                 if (type instanceof NullType) continue;
             }
-            logger.debug("v: {0}", type);
+            logger.debug("v: {}", type);
 
             TypeUsage correspondingTypeUsage = findTypeUsage(currentCall, typeUsages, ifd);
             if (correspondingTypeUsage != null &&
@@ -100,7 +100,7 @@ public class TUBodyTransformer extends BodyTransformer {
                     correspondingTypeUsage.type.equals(type.toString())) {
                 // TypeUsage already exists, add currentCall
                 correspondingTypeUsage.addMethodCall(currentCall, collector);
-                logger.debug("adding {0} to {1}", currentCall, correspondingTypeUsage);
+                logger.debug("adding {} to {}", currentCall, correspondingTypeUsage);
             } else {
                 // Type usage doesn't exist yet, create object and add to typeUsages List
                 TypeUsage newTypeUsage = new TypeUsage(body, currentCall, type, collector);
@@ -122,13 +122,13 @@ public class TUBodyTransformer extends BodyTransformer {
         for (TypeUsage typeUsage : variables) {
             for (MethodCall e : typeUsage.getUnderlyingLocals()) {
                 if (call.getLocal() == e.getLocal()) {
-                    logger.debug("{0} is same as {0}", call.getLocal(), e.getLocal());
-                    logger.debug("{0} <-> {0}", typeUsage.type, e.getMethod().getDeclaringClass());
+                    logger.debug("{} is same as {}", call.getLocal(), e.getLocal());
+                    logger.debug("{} <-> {}", typeUsage.type, e.getMethod().getDeclaringClass());
                     return typeUsage;
                 }
 
                 if (aliasInfo.mustAlias(call.getLocal(), call.getStmt(), e.getLocal(), e.getStmt())) {
-                    logger.debug("{0} alias to {0}", call.getLocal(), e.getLocal());
+                    logger.debug("{} alias to {}", call.getLocal(), e.getLocal());
                     return typeUsage;
                 }
                 if (ifd.mayPointToSameInstanceField(call.getLocal(), e.getLocal())) {
