@@ -7,11 +7,11 @@ public class Main {
     public final static String DEFAULT_DIR = "./target/test-classes/";
 
     public static void main(String[] args) throws Exception {
-        TypeUsageCollector c = new FileTypeUsageCollector("output/output.dat");
-        c = new DatabaseTypeUsageCollector("output/test");
+        TypeUsageCollector c = new FileTypeUsageCollector("output/jabref.dat");
+        c = new DatabaseTypeUsageCollector("output/teamscale");
 
         String toBeAnalyzed = "/home/tesuji/jabref/bin";
-        //toBeAnalyzed = "/home/tesuji/secure/teamscale/engine";
+        toBeAnalyzed = "/home/tesuji/secure/teamscale/engine";
         //toBeAnalyzed = null;
 
         if (args.length > 0) {
