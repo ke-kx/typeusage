@@ -1,6 +1,8 @@
 package typeusage.miner;
 
 import org.apache.commons.lang.StringUtils;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import soot.*;
 import soot.tagkit.LineNumberTag;
 import soot.tagkit.SourceLnPosTag;
@@ -15,6 +17,8 @@ import java.util.stream.Collectors;
  * is an abstraction over Soot locals: Variable: 1 ----- 1..n Local
  */
 public class TypeUsage {
+
+    private static final Logger logger = LogManager.getLogger();
 
     /** Class in which the TypeUsage occurs */
     private String location = "!";
@@ -47,7 +51,7 @@ public class TypeUsage {
 
     public TypeUsage(Body body, MethodCall call, Type type, IMethodCallCollector collector) {
         methodContext = collector.translateContextSignature(body.getMethod());
-        collector.debug("Creating type usage for %s with %s", methodContext, call.getLocal());
+        logger.debug("Creating type usage for {0} with {0}", methodContext, call.getLocal());
 
         location = body.getMethod().getDeclaringClass().toString();
         SourceLnPosTag sourceLnTag = (SourceLnPosTag) call.getStmt().getTag("SourceLnPosTag");

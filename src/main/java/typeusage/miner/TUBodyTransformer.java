@@ -1,5 +1,7 @@
 package typeusage.miner;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import soot.*;
 import soot.jimple.InstanceInvokeExpr;
 import soot.jimple.InvokeExpr;
@@ -16,6 +18,8 @@ import java.util.Map;
  * is a typical Soot BodyTransformer. Sends the type-usages to an IMethodCallCollector
  */
 public class TUBodyTransformer extends BodyTransformer {
+
+    private static final Logger logger = LogManager.getLogger();
 
     /** Reference to parent collector */
     private IMethodCallCollector collector;
@@ -35,6 +39,8 @@ public class TUBodyTransformer extends BodyTransformer {
     @Override
     protected void internalTransform(Body body, String phase, @SuppressWarnings("rawtypes") Map options) {
         aliasInfo = new LocalMustAliasAnalysis(new ExceptionalUnitGraph(body));
+        //todo is crossMethodData getting too big?! when to reset it / how did they solve it (did they?)
+        // or related to logging? -> change that first
         InstanceFieldDetector ifd = new InstanceFieldDetector(crossMethodData);
         ifd.readMethod(body);
 
@@ -56,18 +62,18 @@ public class TUBodyTransformer extends BodyTransformer {
         // for each statement in method body
         for (Unit u : body.getUnits()) {
             Stmt statement = (Stmt) u;
-            collector.debug("%s - %s\n", statement, statement.getClass());
+            logger.debug("{0} - {1}", statement, statement.getClass());
 
             if (statement.containsInvokeExpr()) {
                 InvokeExpr invokeExpr = statement.getInvokeExpr();
-                collector.debug("%s\n", invokeExpr);
+                logger.debug("{0}", invokeExpr);
                 if (invokeExpr instanceof InstanceInvokeExpr
                     // && ! (invokeExpr instanceof SpecialInvokeExpr)
                         ) {
                     Local local = (Local) ((InstanceInvokeExpr) invokeExpr).getBase();
                     MethodCall elem = new MethodCall(local, statement);
                     calls.add(elem);
-                    collector.debug("%s %s\n", elem, invokeExpr.getMethod().getDeclaringClass().getName());
+                    logger.debug("{0} {1}", elem, invokeExpr.getMethod().getDeclaringClass().getName());
                 }
             }
         }
@@ -85,7 +91,7 @@ public class TUBodyTransformer extends BodyTransformer {
                 // still couldn't determine type, skip this call
                 if (type instanceof NullType) continue;
             }
-            collector.debug("v: %s\n", type);
+            logger.debug("v: {0}", type);
 
             TypeUsage correspondingTypeUsage = findTypeUsage(currentCall, typeUsages, ifd);
             if (correspondingTypeUsage != null &&
@@ -94,7 +100,7 @@ public class TUBodyTransformer extends BodyTransformer {
                     correspondingTypeUsage.type.equals(type.toString())) {
                 // TypeUsage already exists, add currentCall
                 correspondingTypeUsage.addMethodCall(currentCall, collector);
-                collector.debug("adding %s to %s\n", currentCall, correspondingTypeUsage);
+                logger.debug("adding {0} to {1}", currentCall, correspondingTypeUsage);
             } else {
                 // Type usage doesn't exist yet, create object and add to typeUsages List
                 TypeUsage newTypeUsage = new TypeUsage(body, currentCall, type, collector);
@@ -116,13 +122,13 @@ public class TUBodyTransformer extends BodyTransformer {
         for (TypeUsage typeUsage : variables) {
             for (MethodCall e : typeUsage.getUnderlyingLocals()) {
                 if (call.getLocal() == e.getLocal()) {
-                    collector.debug("%s is same as %s\n", call.getLocal(), e.getLocal());
-                    collector.debug("%s <-> %s\n", typeUsage.type, e.getMethod().getDeclaringClass());
+                    logger.debug("{0} is same as {0}", call.getLocal(), e.getLocal());
+                    logger.debug("{0} <-> {0}", typeUsage.type, e.getMethod().getDeclaringClass());
                     return typeUsage;
                 }
 
                 if (aliasInfo.mustAlias(call.getLocal(), call.getStmt(), e.getLocal(), e.getStmt())) {
-                    collector.debug("%s alias to %s\n", call.getLocal(), e.getLocal());
+                    logger.debug("{0} alias to {0}", call.getLocal(), e.getLocal());
                     return typeUsage;
                 }
                 if (ifd.mayPointToSameInstanceField(call.getLocal(), e.getLocal())) {

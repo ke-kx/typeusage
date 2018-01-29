@@ -1,11 +1,16 @@
 package typeusage.miner;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
 import java.sql.*;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 
 public class DatabaseTypeUsageCollector extends TypeUsageCollector {
+
+    private static final Logger logger = LogManager.getLogger();
 
     private final Connection databaseConnection;
 
@@ -68,7 +73,7 @@ public class DatabaseTypeUsageCollector extends TypeUsageCollector {
 
     @Override
     public void receive(TypeUsage t) {
-        System.out.println(t);
+        logger.info(t);
 
         try {
             addTypeHierarchy(t);
@@ -85,7 +90,7 @@ public class DatabaseTypeUsageCollector extends TypeUsageCollector {
     private void addTypeHierarchy(TypeUsage t) throws SQLException {
         List<String> typeHierarchy = t.getTypeHierarchy();
         Collections.reverse(typeHierarchy);
-        debug("Adding TypeHierarchy to db: %s\n", typeHierarchy);
+        logger.info("Adding TypeHierarchy to db: {0}", typeHierarchy);
 
         // TODO does this offer any actual performance advantages or is it rather useless?
         ResultSet typeCount;
@@ -132,7 +137,7 @@ public class DatabaseTypeUsageCollector extends TypeUsageCollector {
         }
 
         Set<String> methodsCalls = t.getMethodCalls();
-        debug("Saving methodcalls to db: %s\n", methodsCalls);
+        logger.info("Saving methodcalls to db: {0}", methodsCalls);
         synchronized (addMethodStatement) {
             addMethodStatement.clearParameters();
             addMethodStatement.setInt(2, typeId);
@@ -192,10 +197,4 @@ public class DatabaseTypeUsageCollector extends TypeUsageCollector {
             addCallStatement.executeBatch();
         }
     }
-
-    @Override
-    public void debug(String format, Object... args) {
-        System.out.printf(format, args);
-    }
-
 }
