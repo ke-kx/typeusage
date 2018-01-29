@@ -6,7 +6,9 @@ import soot.options.Options;
 
 import java.io.File;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
+import java.util.stream.Stream;
 
 /**
  * This class makes a static anaylsis of a directory containing Java bytecode using the Soot toolkit
@@ -26,7 +28,7 @@ public abstract class TypeUsageCollector implements IMethodCallCollector {
     private String dirToProcess;
 
     /** Contains all relavant classpaths */
-    final List<String> classpaths = new ArrayList<String>();
+    private final List<String> classpaths = new ArrayList<String>();
 
     /** Constructor */
     public TypeUsageCollector() {
@@ -57,7 +59,17 @@ public abstract class TypeUsageCollector implements IMethodCallCollector {
     protected String[] buildSootArgs() {
         String[] myArgs = {"-soot-classpath", getClassPath(), "-pp", // prepend is not required
                 "-process-dir", dirToProcess,};
-        return myArgs;
+        String[] processDirs = new String[2 * classpaths.size()];
+
+        int i = 0;
+        for (String path : classpaths) {
+            processDirs[i*2] = "-process-dir";
+            processDirs[i*2 + 1] = path;
+            i++;
+        }
+
+        return Stream.concat(Arrays.stream(myArgs), Arrays.stream(processDirs))
+                .toArray(String[]::new);
     }
 
     @Override

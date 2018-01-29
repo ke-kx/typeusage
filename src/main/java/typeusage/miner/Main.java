@@ -8,10 +8,20 @@ public class Main {
 
     public static void main(String[] args) throws Exception {
         TypeUsageCollector c = new FileTypeUsageCollector("output/jabref.dat");
-        c = new DatabaseTypeUsageCollector("output/teamscale");
-
         String toBeAnalyzed = "/home/tesuji/jabref/bin";
-        toBeAnalyzed = "/home/tesuji/secure/teamscale/engine";
+
+        boolean ts = true;
+        if (ts) {
+            c = new DatabaseTypeUsageCollector("output/teamscale");
+            String teamscaleHome = "/home/tesuji/secure/teamscale";
+            String teamscaleEngine = teamscaleHome + "/engine";
+            String teamscaleLib = teamscaleHome + "/lib";
+            toBeAnalyzed = teamscaleEngine;
+
+            setupTSClasspaths(c, toBeAnalyzed);
+            setupTSClasspaths(c, teamscaleLib);
+        }
+
         //toBeAnalyzed = null;
 
         if (args.length > 0) {
@@ -24,16 +34,22 @@ public class Main {
         }
         c.setDirToProcess(toBeAnalyzed);
 
-        //TODO does this make sense or rather investigate the not class method again? / generally read into soot a little bit deeper possibly
-        File dir = new File(toBeAnalyzed + "/public-package-jars/");
+        c.run();
+    }
+
+    private static void setupTSClasspaths(TypeUsageCollector collector, String parentDir) {
+        File dir = new File(parentDir);
         File[] directoryListing = dir.listFiles();
         if (directoryListing != null) {
             for (File child : directoryListing) {
-                System.out.printf("Adding %s\n", child.getAbsolutePath());
-                c.addToClassPath(child.getAbsolutePath());
+                if (child.isDirectory()) {
+                    String pathToAdd = child.getAbsolutePath() + "/classes";
+                    if (new File(pathToAdd).exists()) {
+                        System.out.printf("Adding %s\n", pathToAdd);
+                        collector.addToClassPath(pathToAdd);
+                    }
+                }
             }
         }
-
-        c.run();
     }
 }
