@@ -14,6 +14,7 @@ public class Main {
     public static void main(String[] args) throws Exception {
         TypeUsageCollector c = new FileTypeUsageCollector("output/jabref.dat");
         String toBeAnalyzed = "/home/tesuji/jabref/bin";
+        c = new DatabaseTypeUsageCollector("output/jabref");
 
         boolean ts = true;
         if (ts) {
@@ -39,6 +40,7 @@ public class Main {
         }
         c.setDirToProcess(toBeAnalyzed);
 
+        logger.debug("Shouldn't appear");
         logger.warn("STARTING NOW!!!");
         c.run();
     }

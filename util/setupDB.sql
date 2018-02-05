@@ -102,6 +102,7 @@ SELECT a.leftId as id, a.rightId as aeqId
     FROM callListDifferences a JOIN callListDifferences b ON a.leftId = b.rightId AND a.rightId = b.leftId
     WHERE
         --- call list of right side without callList of left side should have size of 1
+        -- difference < 0 solves a weird bug where otherwise nothingg is displayed
         a.difference < 0 OR a.difference = 1
         -- call list of left side without call list of right side should be empty
         AND b.difference = 0 
@@ -120,7 +121,7 @@ SELECT ta.class, tb.class AS B_class, ta.typeId, tb.typeId AS B_typeId, ta.conte
 CREATE VIEW strangeness AS
 WITH equalCount as (SELECT id, CAST(COUNT (eqID) AS FLOAT) AS count FROM equal GROUP BY id),
     almostEqualCount as (SELECT id, CAST(COUNT (aeqId) AS FLOAT) AS count FROM almostEqual GROUP BY id)
-SELECT tu.id, ISNULL(1.0 - (ec.count / (ec.count + aec.count)), 0.0) AS score, ec.count as equalCount, aec.count AS almostEqualCount
+SELECT tu.id, ISNULL(1.0 - (ec.count / (ec.count + aec.count)), 0.0) AS score, ec.count as equalCount, ISNULL(aec.count, 0.0) AS almostEqualCount
     FROM typeusage tu JOIN equalCount ec ON tu.id = ec.id
     LEFT JOIN almostEqualCount aec ON tu.id = aec.id
 ;
