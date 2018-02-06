@@ -16,7 +16,7 @@ public class Main {
         String toBeAnalyzed = "/home/tesuji/jabref/bin";
         c = new DatabaseTypeUsageCollector("output/jabref");
 
-        boolean ts = true;
+        boolean ts = false;
         if (ts) {
             c = new DatabaseTypeUsageCollector("output/teamscale");
             String teamscaleHome = "/home/tesuji/secure/teamscale";
