@@ -7,8 +7,8 @@ if [ $# -ne 1 ]; then
 fi
 
 WORKSPACE_HOME='/home/tesuji/Dropbox/Uni/MA/workspace/typeusage/'
-echo $WORKSPACE_HOME
+echo "Workspace home: "$WORKSPACE_HOME
 HSQLDB_HOME=$WORKSPACE_HOME/util/hsqldb-2.4.0
-echo $HSQLDB_HOME
+echo "HSQLDB home: "$HSQLDB_HOME
 
 java -jar $HSQLDB_HOME/lib/sqltool.jar --inlineRc=url=jdbc:hsqldb:file:$WORKSPACE_HOME/output/$1,user=SA,password= $WORKSPACE_HOME/util/setupDB.sql
