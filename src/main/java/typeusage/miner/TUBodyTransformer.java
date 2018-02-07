@@ -19,6 +19,9 @@ import java.util.Map;
  */
 public class TUBodyTransformer extends BodyTransformer {
 
+    /** Only apply super expensive LocalMustAlias analysis if set to true */
+    private static final boolean PRECISE = true;
+
     private static final Logger logger = LogManager.getLogger();
 
     /** Reference to parent collector */
@@ -38,7 +41,10 @@ public class TUBodyTransformer extends BodyTransformer {
     /** Actual worker function, is applied to each method body **/
     @Override
     protected void internalTransform(Body body, String phase, @SuppressWarnings("rawtypes") Map options) {
-        aliasInfo = new LocalMustAliasAnalysis(new ExceptionalUnitGraph(body));
+        if (PRECISE) {
+            aliasInfo = new LocalMustAliasAnalysis(new ExceptionalUnitGraph(body));
+        }
+
         //todo is crossMethodData getting too big?! when to reset it / how did they solve it (did they?)
         if (crossMethodData.size() % 100 == 0) logger.error("CrossMethodData size: {}", crossMethodData.size());
         InstanceFieldDetector ifd = new InstanceFieldDetector(crossMethodData);
@@ -127,7 +133,7 @@ public class TUBodyTransformer extends BodyTransformer {
                     return typeUsage;
                 }
 
-                if (aliasInfo.mustAlias(call.getLocal(), call.getStmt(), e.getLocal(), e.getStmt())) {
+                if (PRECISE && aliasInfo.mustAlias(call.getLocal(), call.getStmt(), e.getLocal(), e.getStmt())) {
                     logger.debug("{} alias to {}", call.getLocal(), e.getLocal());
                     return typeUsage;
                 }

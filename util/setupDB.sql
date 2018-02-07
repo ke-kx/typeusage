@@ -30,6 +30,9 @@ CREATE TABLE typeusage (
     lineNr INTEGER,
     context VARCHAR(1024) NOT NULL
 );
+CREATE INDEX in_typeusageT ON typeusage (typeId);
+CREATE INDEX in_typeusageC ON typeusage (context);
+CREATE INDEX in_typeusage ON typeusage (typeId, context);
 
 /* links method and type usages to a list of method calls */
 CREATE TABLE callList (
@@ -38,6 +41,8 @@ CREATE TABLE callList (
     position INTEGER
 );
 CREATE INDEX in_callList ON callList (typeusageId);
+CREATE INDEX in_callList1 ON callList (methodId);
+CREATE INDEX in_callList2 ON callList (typeusageId, methodId);
 
 
 -- build strangenessWrongMethodcall and StrangenessMethodTooMuch in the same way?

@@ -1,6 +1,6 @@
 
-DROP SCHEMA intermediate CASCADE;
-DROP SCHEMA display CASCADE;
+DROP SCHEMA IF EXISTS intermediate CASCADE;
+DROP SCHEMA IF EXISTS display CASCADE;
 
 CREATE SCHEMA intermediate;
 CREATE SCHEMA display;
@@ -29,20 +29,22 @@ CREATE VIEW display.typeusageComplete (id, class, lineNr, context, typeName, met
   WHERE tu.typeId = type.id AND tu.id = tuc.id
 ;
 
-/* Find all typeusages which are exactly equal to another tu */
-CREATE TABLE intermediate.equal (id, eqId) AS
-  (SELECT ta.id, tb.id
-  FROM typeusage ta JOIN typeusage tb ON ta.typeId = tb.typeId AND ta.context = tb.context
-  WHERE NOT EXISTS (
-  -- Neither a has more methodcalls than b
-      (SELECT cla.methodId FROM callList cla WHERE ta.id = cla.typeusageId
-       EXCEPT
-       Select clb.methodId FROM callList clb WHERE tb.id = clb.typeusageId)
-      UNION
-      -- Nor has b more methodcalls than a
-      (Select clb.methodId FROM callList clb WHERE tb.id = clb.typeusageId
-       EXCEPT
-       SELECT cla.methodId FROM callList cla WHERE ta.id = cla.typeusageId)))
+-- Shows the size of the calllist of B without the calls from A
+CREATE CACHED TABLE intermediate.callListDifferences (leftId, rightId, difference) AS
+  (SELECT ta.id, tb.id,
+         (SELECT  COUNT(*) FROM (SELECT clc.methodId FROM callList clc WHERE tb.id = clc.typeusageId
+                                 EXCEPT SELECT cld.methodId FROM callList cld WHERE ta.id = cld.typeusageId) AS calls)
+  FROM typeusage ta JOIN typeusage tb ON ta.context = tb.context AND ta.typeId = tb.typeId)
+WITH DATA
+;
+CREATE INDEX in_callListDifferences ON intermediate.callListDifferences (leftId, rightId);
+CREATE INDEX in_callListDifferencesLeft ON intermediate.callListDifferences (leftId);
+CREATE INDEX in_callListDifferencesRight ON intermediate.callListDifferences (rightId);
+
+CREATE TABLE intermediate.equal (id, eqId) AS 
+  (SELECT a.leftId, a.rightId
+  FROM intermediate.callListDifferences a JOIN intermediate.callListDifferences b ON a.leftId = b.rightId AND a.rightId = b.leftId
+  WHERE a.difference = 0 AND b.difference = 0)
 WITH DATA
 ;
 CREATE INDEX in_equal ON intermediate.equal (id, eqId);
@@ -55,18 +57,6 @@ CREATE VIEW display.equals (class, B_class, typeId, B_typeId, context, B_context
     JOIN typeusage tb ON tb.id = e.eqId
     JOIN display.typeusageCalls tcb ON tb.id = tcb.id
 ;
-
--- Shows the size of the calllist of B without the calls from A
-CREATE TABLE intermediate.callListDifferences (leftId, rightId, difference) AS
-  (SELECT ta.id, tb.id,
-         (SELECT  COUNT(*) FROM (SELECT clc.methodId FROM callList clc WHERE tb.id = clc.typeusageId
-                                 EXCEPT SELECT cld.methodId FROM callList cld WHERE ta.id = cld.typeusageId) AS calls)
-  FROM typeusage ta JOIN typeusage tb ON ta.typeId = tb.typeId AND ta.context = tb.context)
-WITH DATA
-;
-CREATE INDEX in_callListDifferences ON intermediate.callListDifferences (leftId, rightId);
-CREATE INDEX in_callListDifferencesLeft ON intermediate.callListDifferences (leftId);
-CREATE INDEX in_callListDifferencesRight ON intermediate.callListDifferences (rightId);
 
 -- all ids on the right (bId) are almost equal to the ones on the left (have one more method call)
 CREATE TABLE intermediate.almostEqual (id, aeqId) AS

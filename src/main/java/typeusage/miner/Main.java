@@ -23,6 +23,7 @@ public class Main {
             String teamscaleEngine = teamscaleHome + "/engine";
             String teamscaleLib = teamscaleHome + "/lib";
             toBeAnalyzed = teamscaleEngine;
+            //c = new FileTypeUsageCollector("output/teamscale.dat");
 
             setupTSClasspaths(c, toBeAnalyzed);
             setupTSClasspaths(c, teamscaleLib);
