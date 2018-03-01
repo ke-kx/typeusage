@@ -14,12 +14,6 @@
         </dependency>
 
         <dependency>
-            <groupId>ca.mcgill.sable</groupId>
-            <artifactId>soot</artifactId>
-            <version>3.0.0-SNAPSHOT</version>
-        </dependency>
-
-        <dependency>
             <groupId>commons-lang</groupId>
             <artifactId>commons-lang</artifactId>
             <version>2.4</version>
@@ -48,11 +42,31 @@
             <artifactId>log4j-core</artifactId>
             <version>2.10.0</version>
         </dependency>
+
     </dependencies>
 
     <build>
 
         <plugins>
+            <plugin>
+                <groupId>com.googlecode.maven-download-plugin</groupId>
+                <artifactId>download-maven-plugin</artifactId>
+                <version>1.3.0</version>
+                <executions>
+                    <execution>
+                        <!-- the wget goal actually binds itself to this phase by default -->
+                        <phase>validate</phase>
+                        <goals>
+                            <goal>wget</goal>
+                        </goals>
+                        <configuration>
+                            <url>https://soot-build.cs.uni-paderborn.de/public/origin/develop/soot/soot-develop/build/sootclasses-trunk-jar-with-dependencies.jar</url>
+                            <!-- default target location, just to demonstrate the parameter -->
+                            <outputDirectory>${project.build.directory}</outputDirectory>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
@@ -90,11 +104,6 @@
 
 
     <repositories>
-        <repository>
-            <id>soot-snapshot</id>
-            <name>soot snapshots</name>
-            <url>https://soot-build.cs.uni-paderborn.de/nexus/repository/soot-snapshot/</url>
-        </repository>
         <repository>
             <id>stg-mubench</id>
             <name>MuBench</name>
