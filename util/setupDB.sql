@@ -44,6 +44,25 @@ CREATE INDEX in_callList ON callList (typeusageId);
 CREATE INDEX in_callList1 ON callList (methodId);
 CREATE INDEX in_callList2 ON callList (typeusageId, methodId);
 
+-- Stuff only related to displaying things
+DROP SCHEMA IF EXISTS display CASCADE;
+CREATE SCHEMA display;
+
+/* A list of calls for each type usage */
+CREATE VIEW display.typeusageCalls (id, methodCalls) AS
+  SELECT tu.id, GROUP_CONCAT(method.methodName SEPARATOR ', ')
+  FROM typeusage tu
+    JOIN callList cl ON tu.id = cl.typeusageId
+    JOIN method ON cl.methodId = method.id
+  GROUP BY tu.id /* ORDER BY cl.position */
+;
+
+/* Show complete typeusages as they would be printed -  location, lineNr, methodContext, type, methodCalls, (_extends) */
+CREATE VIEW display.typeusageComplete (id, class, lineNr, context, typeName, methodCalls) AS
+  SELECT tu.id, tu.class, tu.lineNr, tu.context, type.typeName, tuc.methodCalls
+  FROM typeusage tu, type, display.typeusageCalls tuc
+  WHERE tu.typeId = type.id AND tu.id = tuc.id
+;
 
 -- build strangenessWrongMethodcall and StrangenessMethodTooMuch in the same way?
 -- wrong method call == ae -> difference 1 on both sides instead of 0
