@@ -15,7 +15,7 @@ public class Tests {
     @BeforeClass
     public static void setup() throws Exception {
         c = new TestTypeUsageCollector();
-        c.setDirToProcess(Main.DEFAULT_DIR);
+        c.addDirToProcess(Main.DEFAULT_DIR);
         c.run();
     }
 

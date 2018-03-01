@@ -77,7 +77,7 @@ public class DMMCRunner extends MuBenchRunner {
     protected void mineAndDetect(DetectorArgs args, DetectorOutput output) throws Exception {
         String modelFilename = Files.createTempFile("output", ".dat").toString();
         FileTypeUsageCollector collector = new FileTypeUsageCollector(modelFilename);
-        collector.setDirToProcess(args.getTargetPath().classPath);
+        collector.addDirToProcess(args.getTargetPath().classPath);
         run(output, modelFilename, collector,
                 // using values from the paper
                 /* strangeness threshold = */ 0.5, /* maximum number of missing calls = */ 1, usage -> true, true);

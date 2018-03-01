@@ -1,12 +1,15 @@
 package typeusage.miner;
 
 import org.apache.commons.lang.StringUtils;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import soot.*;
 import soot.options.Options;
 
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.stream.Stream;
 
@@ -19,16 +22,21 @@ import java.util.stream.Stream;
  */
 public abstract class TypeUsageCollector implements IMethodCallCollector {
 
+    private static final Logger logger = LogManager.getLogger();
+
     /**
      * Keep a type-usage if it's class' fully-qualified name starts with this prefix
      */
     private String prefixToKeep = "";
 
-    /** Directory which shall be processed by Soot */
-    private String dirToProcess;
-
     /** Contains all relavant classpaths */
-    private final List<String> classpaths = new ArrayList<String>();
+    private final List<String> classpaths = new ArrayList<>();
+
+    /** Contains all relavant dirs */
+    private final List<String> processDirs = new ArrayList<>();
+
+    /** Contains excluded packages */
+    private String[] additionalOptions;
 
     /** Constructor */
     public TypeUsageCollector() {
@@ -51,24 +59,30 @@ public abstract class TypeUsageCollector implements IMethodCallCollector {
 
         String[] myArgs = buildSootArgs();
 
+        logger.warn("Soot Commandline Arguments: " + Arrays.toString(myArgs));
+
         soot.Main.main(myArgs);
         return this;
     }
 
+    public void setAdditionalOptions(String[] additionalOptions) {
+        this.additionalOptions = additionalOptions;
+    }
+
     /** Assemble arguments by setting classpath and processed directory */
     protected String[] buildSootArgs() {
-        String[] myArgs = {"-soot-classpath", getClassPath(), "-pp", // prepend is not required
-                "-process-dir", dirToProcess,};
-        String[] processDirs = new String[2 * classpaths.size()];
+        String[] myArgs = {//"-soot-classpath", getClassPath(), "-pp", // prepend is not required
+                };
+        String[] processDirsStrings = new String[2 * processDirs.size()];
 
         int i = 0;
-        for (String path : classpaths) {
-            processDirs[i*2] = "-process-dir";
-            processDirs[i*2 + 1] = path;
+        for (String path : processDirs) {
+            processDirsStrings[i * 2] = "-process-dir";
+            processDirsStrings[i * 2 + 1] = path;
             i++;
         }
 
-        return Stream.concat(Arrays.stream(myArgs), Arrays.stream(processDirs))
+        return Stream.concat(Stream.concat(Arrays.stream(additionalOptions), Arrays.stream(myArgs)), Arrays.stream(processDirsStrings))
                 .toArray(String[]::new);
     }
 
@@ -121,9 +135,9 @@ public abstract class TypeUsageCollector implements IMethodCallCollector {
      * Return classpath array joined by ":" and including the directory to process
      */
     public String getClassPath() {
-        if (!classpaths.contains(dirToProcess))
-            classpaths.add(dirToProcess);
-        return StringUtils.join(classpaths, ":");
+        List<String> cp = new ArrayList<>(classpaths);
+        // cp.add(dirToProcess);
+        return StringUtils.join(cp, ":");
     }
 
     /** Adds a new file to the classpath as long as it exists */
@@ -134,8 +148,8 @@ public abstract class TypeUsageCollector implements IMethodCallCollector {
         classpaths.add(jar);
     }
 
-    /** @see #dirToProcess */
-    public void setDirToProcess(String dirToProcess) {
-        this.dirToProcess = dirToProcess;
+    /** @see #processDirs */
+    public void addDirToProcess(String dirToProcess) {
+        processDirs.add(dirToProcess);
     }
 }
