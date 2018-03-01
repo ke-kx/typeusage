@@ -1,6 +1,9 @@
 #hsql folder
 util/hsqldb-2.4.0
 
+# folder with android apks
+apks
+
 # output files created by typeusage.miner
 output
 
