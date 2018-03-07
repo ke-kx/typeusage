@@ -18,6 +18,8 @@ public interface IMethodCallCollector {
     /** Keep a type-usage if it's class' fully-qualified name starts with this prefix */
     String getPrefixToKeep();
 
+    boolean isExcluded(String clss);
+
     /** Poor man's applicative debug */
     void debug(String format, Object... args);
 }

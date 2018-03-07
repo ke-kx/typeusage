@@ -20,7 +20,7 @@ import java.util.Map;
 public class TUBodyTransformer extends BodyTransformer {
 
     /** Only apply super expensive LocalMustAlias analysis if set to true */
-    private static final boolean PRECISE = true;
+    private static final boolean PRECISE = false;
 
     private static final Logger logger = LogManager.getLogger();
 
@@ -41,6 +41,12 @@ public class TUBodyTransformer extends BodyTransformer {
     /** Actual worker function, is applied to each method body **/
     @Override
     protected void internalTransform(Body body, String phase, @SuppressWarnings("rawtypes") Map options) {
+        // only do transform if class isn't excluded from analysis
+        if (collector.isExcluded(body.getMethod().getDeclaringClass().getName())) {
+            logger.warn("Ignoring class: {}", body.getMethod().getDeclaringClass().getName());
+            return;
+        }
+
         if (PRECISE) {
             aliasInfo = new LocalMustAliasAnalysis(new ExceptionalUnitGraph(body));
         }

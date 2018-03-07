@@ -9,7 +9,6 @@ import soot.options.Options;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.stream.Stream;
 
@@ -35,17 +34,21 @@ public abstract class TypeUsageCollector implements IMethodCallCollector {
     /** Contains all relavant dirs */
     private final List<String> processDirs = new ArrayList<>();
 
+    /** Classes which do not need to be processed */
+    private final List<String> excludedPackages = new ArrayList<>();
+
     /** Contains excluded packages */
-    private String[] additionalOptions;
+    private String[] additionalOptions = {};
 
     /** Constructor */
     public TypeUsageCollector() {
-        // TODO blogpost claims this option is not actually recommended?
+        Options.v().set_app(true);
+        Options.v().set_keep_line_number(true);
+        Options.v().set_output_format(Options.output_format_none);
+
         // http://www.bodden.de/2008/08/21/soot-command-line/
         Options.v().set_allow_phantom_refs(true);
 
-        //TODO: do i actually want to analyse the src or the classfiles?
-        //Options.v().set_src_prec(Options.src_prec_c);
         Scene.v().addBasicClass("java.lang.invoke.LambdaMetafactory", SootClass.SIGNATURES);
     }
 
@@ -53,9 +56,6 @@ public abstract class TypeUsageCollector implements IMethodCallCollector {
     public TypeUsageCollector run() {
 
         PackManager.v().getPack("jtp").add(new Transform("jtp.myTransform", new TUBodyTransformer(this)));
-
-        Options.v().set_keep_line_number(true);
-        Options.v().set_output_format(Options.output_format_none);
 
         String[] myArgs = buildSootArgs();
 
@@ -151,5 +151,20 @@ public abstract class TypeUsageCollector implements IMethodCallCollector {
     /** @see #processDirs */
     public void addDirToProcess(String dirToProcess) {
         processDirs.add(dirToProcess);
+    }
+
+    public void addExcludedPackage(String clss) {
+        excludedPackages.add(clss);
+    }
+
+    @Override
+    public boolean isExcluded(String name) {
+        for (String pkg : excludedPackages) {
+            if (name.equals(pkg) || ((pkg.endsWith(".*") || pkg.endsWith("$*"))
+                    && name.startsWith(pkg.substring(0, pkg.length() - 1)))) {
+                return true;
+            }
+        }
+        return false;
     }
 }
