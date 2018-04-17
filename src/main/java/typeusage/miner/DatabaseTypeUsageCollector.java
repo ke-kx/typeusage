@@ -32,27 +32,42 @@ public class DatabaseTypeUsageCollector extends TypeUsageCollector {
     /** Insert call into callList (1 = typeusageId, 2 = typeId, 3 = methodName, 4 = position) */
     private final PreparedStatement addCallStatement;
 
-    public DatabaseTypeUsageCollector(String databaseLocation) {
+    private final int projectId;
+
+    public DatabaseTypeUsageCollector(String databaseLocation, String projectName) {
         try {
             databaseConnection = DriverManager.getConnection("jdbc:hsqldb:file:" + databaseLocation, "SA", "");
+
+            // save project name to db + obtain project id (needs to be saved with every tu)
+            PreparedStatement addProjectStmt = databaseConnection.prepareStatement("INSERT INTO project(id, name, analysisTime) " +
+                    "VALUES (DEFAULT, ?, 0)", Statement.RETURN_GENERATED_KEYS);
+            addProjectStmt.setString(1, projectName);
+            addProjectStmt.execute();
+            ResultSet res = addProjectStmt.getGeneratedKeys();
+            if (res.next()) {
+                projectId = res.getInt(1);
+            } else {
+                throw new RuntimeException("Couldn't insert project");
+            }
+
             checkTypesStatement = databaseConnection.prepareStatement("SELECT COUNT(*) FROM type WHERE typeName IN( UNNEST(?) )");
             getTypeStatement = databaseConnection.prepareStatement("SELECT id FROM type WHERE typeName = ?");
 
             addTypeStatement = databaseConnection.prepareStatement(
                     "MERGE INTO type USING (VALUES( ? )) AS vals(typeName) " +
-                        "ON type.typeName = vals.typeName " +
-                        "WHEN NOT MATCHED THEN INSERT VALUES (DEFAULT, (SELECT id FROM type WHERE typeName = ?), vals.typeName)"
+                            "ON type.typeName = vals.typeName " +
+                            "WHEN NOT MATCHED THEN INSERT VALUES (DEFAULT, (SELECT id FROM type WHERE typeName = ?), vals.typeName)"
             );
             addMethodStatement = databaseConnection.prepareStatement(
                     "MERGE INTO method USING (VALUES( ? )) AS vals(methodName) " +
-                        "ON method.typeId = ? AND method.methodName = vals.methodName " +
-                        "WHEN NOT MATCHED THEN INSERT VALUES (DEFAULT, ?, vals.methodName)");
+                            "ON method.typeId = ? AND method.methodName = vals.methodName " +
+                            "WHEN NOT MATCHED THEN INSERT VALUES (DEFAULT, ?, vals.methodName)");
             addTypeUsageStatement = databaseConnection.prepareStatement(
-                    "INSERT INTO typeusage(id, typeId, class, lineNr, context) " +
-                        "VALUES( DEFAULT, (SELECT id FROM type WHERE typeName = ?), ?, ?, ? )", Statement.RETURN_GENERATED_KEYS);
+                    "INSERT INTO typeusage(id, typeId, class, lineNr, context, projectId) " +
+                            "VALUES( DEFAULT, (SELECT id FROM type WHERE typeName = ?), ?, ?, ?," + projectId +")", Statement.RETURN_GENERATED_KEYS);
             addCallStatement = databaseConnection.prepareStatement(
                     "INSERT INTO callList(typeusageId, methodId, position) " +
-                        "VALUES( ?, (SELECT id FROM method WHERE typeId = ? AND methodName = ? ), ? )");
+                            "VALUES( ?, (SELECT id FROM method WHERE typeId = ? AND methodName = ? ), ? )");
         } catch (SQLException e) {
             e.printStackTrace();
             // rethrow to enable setting final variables in try-catch block
@@ -62,8 +77,15 @@ public class DatabaseTypeUsageCollector extends TypeUsageCollector {
 
     @Override
     public DatabaseTypeUsageCollector run() {
+        long startTime = System.currentTimeMillis();
+
         super.run();
+
+        // determine elapsed time and write to db
+        long duration = System.currentTimeMillis() - startTime;
         try {
+            Statement stmt = databaseConnection.createStatement();
+            stmt.executeUpdate("UPDATE project SET analysisTime=" + duration + " WHERE id=" + projectId);
             databaseConnection.close();
         } catch (SQLException e) {
             e.printStackTrace();

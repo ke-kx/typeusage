@@ -20,7 +20,7 @@ import java.util.Map;
 public class TUBodyTransformer extends BodyTransformer {
 
     /** Only apply super expensive LocalMustAlias analysis if set to true */
-    private static final boolean PRECISE = false;
+    private static final boolean PRECISE = true;
 
     private static final Logger logger = LogManager.getLogger();
 
